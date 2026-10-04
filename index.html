@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Тренажёр творческого акта</title>
+<style>
+:root{--bg:#faf8f4;--card:#fff;--ink:#1d1b18;--muted:#6b665e;--line:#e4dfd6;--accent:#b4472f;--accent-ink:#fff;--ok:#2f7d4f}
+@media (prefers-color-scheme:dark){:root{--bg:#161412;--card:#201d1a;--ink:#f1ede6;--muted:#a39d92;--line:#3a352f;--accent:#e0795f;--accent-ink:#161412;--ok:#6fc08e}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Georgia,"Times New Roman",serif}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px 64px}
+header{padding:28px 0 8px}
+h1{font-size:1.6rem;margin:0 0 4px;font-weight:600}
+.sub{color:var(--muted);margin:0;font-size:.95rem}
+nav{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0;border-bottom:1px solid var(--line);padding-bottom:10px}
+nav button{font:inherit;font-size:.95rem;background:none;border:1px solid transparent;border-radius:999px;padding:6px 14px;color:var(--muted);cursor:pointer}
+nav button[aria-current=true]{border-color:var(--ink);color:var(--ink)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:12px 0}
+.card h3{margin:0 0 4px;font-size:1.05rem}
+.card p{margin:4px 0}
+.muted{color:var(--muted);font-size:.9rem}
+.mod h2{font-size:1.15rem;margin:28px 0 2px}
+.mod .idea{color:var(--muted);margin:0 0 8px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pill{font-size:.8rem;border:1px solid var(--line);border-radius:999px;padding:1px 10px;color:var(--muted)}
+.done{color:var(--ok);border-color:var(--ok)}
+button.primary,button.ghost{font:inherit;border-radius:8px;padding:8px 16px;cursor:pointer}
+button.primary{background:var(--accent);color:var(--accent-ink);border:1px solid var(--accent)}
+button.ghost{background:none;color:var(--ink);border:1px solid var(--line)}
+button:disabled{opacity:.5;cursor:default}
+.item{cursor:pointer}
+.item:hover{border-color:var(--accent)}
+textarea{width:100%;min-height:150px;font:inherit;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px;resize:vertical}
+.timer{font:600 2.4rem/1 ui-monospace,Menlo,monospace;letter-spacing:.04em}
+ol.steps{padding-left:20px}
+.opt{display:block;width:100%;text-align:left;font:inherit;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:8px 0;cursor:pointer}
+.opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,var(--card))}
+.opt.wrong{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--card))}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:10px}
+.bar i{display:block;height:100%;background:var(--accent)}
+.stats{display:flex;gap:12px;flex-wrap:wrap}
+.stats .card{flex:1;min-width:140px;text-align:center;margin:0}
+.stats b{display:block;font-size:1.6rem}
+.entry blockquote{margin:6px 0 0;white-space:pre-wrap;border-left:3px solid var(--line);padding-left:12px}
+footer{margin-top:40px;color:var(--muted);font-size:.8rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Тренажёр творческого акта</h1>
+  <p class="sub">Практики по мотивам идей Рика Рубина из книги «Из ничего. Искусство создавать искусство»</p>
+</header>
+<nav id="nav"></nav>
+<main id="view"></main>
+<footer>Независимый учебный проект. Упражнения написаны своими словами и отражают общие идеи книги, а не воспроизводят её текст. Данные хранятся только в вашем браузере.</footer>
+</div>
+
+<script>
+// ---------- Данные ----------
+const MODULES = [
+  {id:'attention', title:'1. Внимание', idea:'Творчество начинается с того, что вы замечаете. Сначала настраиваем восприятие.'},
+  {id:'seed', title:'2. Семя', idea:'Идеи приходят сами. Задача — собирать их и не судить слишком рано.'},
+  {id:'experiment', title:'3. Эксперимент', idea:'Играйте, ломайте, пробуйте. Результат пока не важен, важен процесс.'},
+  {id:'craft', title:'4. Ремесло', idea:'Идея становится работой через выбор, сокращение и точность.'},
+  {id:'completion', title:'5. Завершение', idea:'Закончить — тоже навык: решить, что работа достаточна, и отпустить её.'}
+];
+
+const PRACTICES = [
+  {id:'a1', mod:'attention', title:'Пять минут тишины', min:5,
+   desc:'Сядьте без телефона и музыки. Ваша единственная задача — замечать.',
+   steps:['Запустите таймер и сидите спокойно.','Мысленно отмечайте звуки, ощущения, мысли.','После таймера запишите не меньше 10 наблюдений.'],
+   prompt:'Что вы заметили? Перечислите наблюдения.'},
+  {id:'a2', mod:'attention', title:'Одно место, три взгляда', min:8,
+   desc:'Одна и та же комната выглядит по-разному для разных людей.',
+   steps:['Выберите место рядом с вами.','Опишите его глазами человека, который видит его впервые.','Опишите глазами того, кто здесь живёт десять лет.','Опишите глазами ребёнка или животного.'],
+   prompt:'Три коротких описания одного места.'},
+  {id:'a3', mod:'attention', title:'Ритуал начала', min:5,
+   desc:'Повторяемое начало помогает перейти из обычного состояния в рабочее.',
+   steps:['Придумайте маленькое действие: чай, прогулка, чистый стол, одна и та же песня.','Опишите, как оно будет выглядеть, во сколько и сколько займёт.','Выполните его прямо сейчас и отметьте, что изменилось.'],
+   prompt:'Ваш ритуал и что вы почувствовали после него.'},
+  {id:'s1', mod:'seed', title:'Десять семян без оценки', min:5,
+   desc:'Критик убивает идеи в момент рождения. Дадим им шанс появиться.',
+   steps:['Выберите любую область: рассказ, песня, продукт, картина.','За 5 минут запишите 10 идей, даже слабых и странных.','Не вычёркивайте и не оценивайте, пока идёт таймер.'],
+   prompt:'Ваш список из 10 идей.'},
+  {id:'s2', mod:'seed', title:'Коллекция притяжений', min:6,
+   desc:'Вкус — это то, к чему вас тянет. Объяснять причины необязательно.',
+   steps:['Назовите 5 вещей, которые вас недавно зацепили: фраза, цвет, звук, кадр.','Не ищите логику, просто запишите.','Затем найдите, что у них общего.'],
+   prompt:'Пять вещей и то общее, что вы нашли.'},
+  {id:'s3', mod:'seed', title:'Письмо из будущего', min:7,
+   desc:'Иногда семя проявляется, когда вы представляете готовое.',
+   steps:['Представьте, что ваша работа уже существует и вы её показываете другу.','Опишите её так, как будто она готова: что вы чувствуете, глядя на неё.','Выделите одну деталь, которая вас удивила.'],
+   prompt:'Описание «готовой» работы.'},
+  {id:'e1', mod:'experiment', title:'Жёсткое ограничение', min:10,
+   desc:'Рамки освобождают: меньше вариантов — больше изобретательности.',
+   steps:['Выберите небольшую задачу: абзац текста, мелодия из 4 нот, эскиз.','Добавьте строгое правило: только 3 цвета, 50 слов, одна нота в такте.','Сделайте работу в этих рамках.'],
+   prompt:'Какое ограничение вы выбрали и что получилось?'},
+  {id:'e2', mod:'experiment', title:'Грубый набросок', min:3,
+   desc:'Первая версия нужна, чтобы существовать, а не чтобы быть хорошей.',
+   steps:['Возьмите идею из практики «Десять семян».','За 3 минуты сделайте самую грубую версию.','Не исправляйте. Остановитесь, когда зазвенит таймер.'],
+   prompt:'Что вы сделали? Что показало вам это быстрое действие?'},
+  {id:'e3', mod:'experiment', title:'Сделать наоборот', min:6,
+   desc:'Переворот привычного часто открывает новое.',
+   steps:['Запишите свою текущую идею или работу в одном предложении.','Сформулируйте её полную противоположность.','Сделайте набросок противоположной версии.','Заберите из неё то, что оживляет оригинал.'],
+   prompt:'Исходная идея, противоположность и что из неё стоит взять.'},
+  {id:'c1', mod:'craft', title:'Сократить вдвое', min:10,
+   desc:'Часто сила работы в том, что в ней нет лишнего.',
+   steps:['Возьмите свой текст, набросок или план.','Удалите ровно половину, оставьте самое живое.','Сравните: что стало яснее?'],
+   prompt:'Что вы убрали и что вы поняли о ядре своей работы?'},
+  {id:'c2', mod:'craft', title:'Свежие глаза', min:5,
+   desc:'После перерыва вы видите работу почти как чужую.',
+   steps:['Отложите работу минимум на день (сегодня — хотя бы на час).','Вернитесь и прочитайте или посмотрите её как зритель.','Отметьте 3 места, где ваше внимание проваливается.'],
+   prompt:'Три слабых места и как вы их исправите.'},
+  {id:'c3', mod:'craft', title:'Один вопрос', min:5,
+   desc:'У сильной работы есть центр. Всё остальное его обслуживает.',
+   steps:['Сформулируйте вопрос, на который отвечает ваша работа.','Пройдите по частям и проверьте, служит ли каждая этому вопросу.','Отметьте то, что не служит.'],
+   prompt:'Ваш центральный вопрос и список лишнего.'},
+  {id:'f1', mod:'completion', title:'Критерий «достаточно»', min:5,
+   desc:'Без заранее выбранного финиша работа не заканчивается.',
+   steps:['Опишите 3 признака, по которым вы поймёте, что работа готова.','Проверьте свою текущую работу по ним.','Если два из трёх выполнены — объявите её завершённой.'],
+   prompt:'Три критерия и результат проверки.'},
+  {id:'f2', mod:'completion', title:'Отпустить', min:5,
+   desc:'Законченная работа принадлежит миру, а не вам одному.',
+   steps:['Выберите, кому вы покажете работу и когда.','Напишите, чего вы боитесь.','Напишите, что получите, если покажете.','Назначьте дату показа.'],
+   prompt:'Кому, когда и чего вы боитесь.'}
+];
+
+const QUIZ = [
+  {q:'Вы застряли и не можете начать. Что ближе всего к подходу книги?', o:['Дождаться вдохновения','Снизить ставки: сделать грубый набросок и посмотреть, что получится','Сначала прочитать ещё три книги'], a:1, e:'Эксперимент и маленькие шаги снимают давление. Первая версия не обязана быть хорошей.'},
+  {q:'Что делать с «плохими» идеями на стадии семян?', o:['Сразу отбрасывать','Собирать без оценки: судить рано','Показывать всем для обратной связи'], a:1, e:'На ранней стадии критик мешает. Отбор лучше отложить на потом.'},
+  {q:'Зачем нужны жёсткие ограничения?', o:['Чтобы усложнить жизнь','Чтобы сузить выбор и подтолкнуть изобретательность','Чтобы заставить работать быстрее'], a:1, e:'Рамки дают опору, а чистый лист без правил нередко парализует.'},
+  {q:'Что такое «вкус» в творческом процессе?', o:['Набор правил хорошего тона','То, к чему вас искренне тянет и что вы можете развивать','Мнение критиков'], a:1, e:'Вкус тренируется вниманием и коллекционированием того, что вас зацепило.'},
+  {q:'Как лучше проверять работу на последних этапах?', o:['Править без остановки','Дать себе перерыв и посмотреть свежим взглядом','Спросить как можно больше людей'], a:1, e:'Дистанция даёт взгляд зрителя, и слабые места становятся заметнее.'},
+  {q:'Почему важно завершать работы?', o:['Чтобы освободить место для следующих и выпустить их в мир','Чтобы похвастаться','Потому что так принято'], a:0, e:'Бесконечная доработка тоже способ защититься от показа. Законченное двигает вас дальше.'},
+  {q:'Что лучше всего описывает ритуал начала?', o:['Суеверие','Повторяемое действие, настраивающее на работу','Способ потянуть время'], a:1, e:'Ритуал сигнализирует мозгу, что пора переходить в творческое состояние.'},
+  {q:'Вы сократили текст вдвое и он стал лучше. Что это значит?', o:['Вы испортили оригинал','Ядро работы было сильнее, чем окружающий шум','Нужно сократить ещё в десять раз'], a:1, e:'Вычёркивание проясняет, что в работе действительно живое.'}
+];
+
+// ---------- Хранилище ----------
+const KEY = 'creative-trainer-v1';
+function load(){
+  try{ const d = JSON.parse(localStorage.getItem(KEY)); if(d && d.entries) return d; }catch(e){}
+  return {entries:[], quiz:{best:0, last:0}};
+}
+let state = load();
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+
+const doneIds = () => new Set(state.entries.map(e => e.practice));
+const dayKey = d => d.toISOString().slice(0,10);
+function streak(){
+  const days = new Set(state.entries.map(e => e.date.slice(0,10)));
+  let n = 0, d = new Date();
+  if(!days.has(dayKey(d))) d.setDate(d.getDate()-1);
+  while(days.has(dayKey(d))){ n++; d.setDate(d.getDate()-1); }
+  return n;
+}
+
+// ---------- Утилиты DOM ----------
+function el(tag, attrs, ...kids){
+  const n = document.createElement(tag);
+  for(const [k,v] of Object.entries(attrs||{})){
+    if(k === 'class') n.className = v;
+    else if(k.startsWith('on')) n.addEventListener(k.slice(2), v);
+    else n.setAttribute(k, v);
+  }
+  for(const c of kids.flat()) n.append(c);
+  return n;
+}
+const view = document.getElementById('view');
+function show(...nodes){ view.replaceChildren(...nodes); window.scrollTo(0,0); }
+
+// ---------- Навигация ----------
+const TABS = [['today','Сегодня'],['practices','Практики'],['quiz','Тест'],['journal','Дневник']];
+let currentTab = 'today', timerId = null;
+function renderNav(){
+  const nav = document.getElementById('nav');
+  nav.replaceChildren(...TABS.map(([id,label]) =>
+    el('button', {'aria-current': String(id === currentTab), onclick: () => go(id)}, label)));
+}
+function go(tab){
+  clearInterval(timerId);
+  currentTab = tab; renderNav();
+  ({today:viewToday, practices:viewPractices, quiz:viewQuiz, journal:viewJournal})[tab]();
+}
+
+// ---------- Экраны ----------
+function practiceCard(p){
+  const done = doneIds().has(p.id);
+  return el('div', {class:'card item', onclick: () => openPractice(p.id)},
+    el('div', {class:'row'}, el('h3', {}, p.title),
+      el('span', {class:'pill'}, p.min + ' мин'),
+      done ? el('span', {class:'pill done'}, 'выполнено') : ''),
+    el('p', {class:'muted'}, p.desc));
+}
+
+function viewToday(){
+  const done = doneIds();
+  const left = PRACTICES.filter(p => !done.has(p.id));
+  const pool = left.length ? left : PRACTICES;
+  const seed = Number(dayKey(new Date()).replaceAll('-',''));
+  const pick = pool[seed % pool.length];
+  const pct = Math.round(done.size / PRACTICES.length * 100);
+  show(
+    el('div', {class:'stats'},
+      el('div', {class:'card'}, el('b', {}, String(done.size) + '/' + PRACTICES.length), 'практик'),
+      el('div', {class:'card'}, el('b', {}, String(streak())), 'дней подряд'),
+      el('div', {class:'card'}, el('b', {}, String(state.quiz.best) + '/' + QUIZ.length), 'лучший тест')),
+    el('div', {class:'bar'}, el('i', {style:'width:'+pct+'%'})),
+    el('h2', {style:'font-size:1.1rem;margin:24px 0 0'}, 'Практика дня'),
+    practiceCard(pick),
+    el('p', {class:'muted'}, 'Одна небольшая практика в день работает лучше, чем марафон раз в месяц.'));
+}
+
+function viewPractices(){
+  const nodes = MODULES.map(m => el('section', {class:'mod'},
+    el('h2', {}, m.title), el('p', {class:'idea'}, m.idea),
+    PRACTICES.filter(p => p.mod === m.id).map(practiceCard)));
+  show(...nodes);
+}
+
+function openPractice(id){
+  const p = PRACTICES.find(x => x.id === id);
+  clearInterval(timerId);
+  let left = p.min * 60, running = false;
+  const fmt = s => String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
+  const display = el('div', {class:'timer'}, fmt(left));
+  const startBtn = el('button', {class:'primary', onclick: toggle}, 'Старт');
+  function toggle(){
+    if(running){ clearInterval(timerId); running = false; startBtn.textContent = 'Продолжить'; return; }
+    running = true; startBtn.textContent = 'Пауза';
+    timerId = setInterval(() => {
+      left--; display.textContent = fmt(Math.max(left,0));
+      if(left <= 0){ clearInterval(timerId); running = false; startBtn.textContent = 'Готово'; startBtn.disabled = true; display.textContent = '00:00'; }
+    }, 1000);
+  }
+  const area = el('textarea', {placeholder:'Пишите здесь…'});
+  const finish = el('button', {class:'primary', onclick: () => {
+    const text = area.value.trim();
+    if(!text){ area.focus(); return; }
+    state.entries.unshift({practice:p.id, title:p.title, text, date:new Date().toISOString()});
+    save(); go('journal');
+  }}, 'Сохранить в дневник');
+  show(
+    el('button', {class:'ghost', onclick: () => go('practices')}, '← Назад'),
+    el('div', {class:'card'},
+      el('h3', {}, p.title), el('p', {class:'muted'}, p.desc),
+      el('ol', {class:'steps'}, p.steps.map(s => el('li', {}, s)))),
+    el('div', {class:'card'}, el('div', {class:'row'}, display, startBtn)),
+    el('div', {class:'card'}, el('p', {}, p.prompt), area, el('p', {}, finish)));
+}
+
+function viewQuiz(){
+  let i = 0, score = 0;
+  function render(){
+    if(i >= QUIZ.length){
+      state.quiz.last = score; state.quiz.best = Math.max(state.quiz.best, score); save();
+      show(el('div', {class:'card'}, el('h3', {}, 'Результат: ' + score + ' из ' + QUIZ.length),
+        el('p', {class:'muted'}, score >= 6 ? 'Хорошее понимание идей. Закрепите практикой.' : 'Загляните в практики: идеи лучше усваиваются руками.'),
+        el('button', {class:'primary', onclick: viewQuiz}, 'Пройти ещё раз')));
+      return;
+    }
+    const q = QUIZ[i];
+    const box = el('div', {class:'card'}, el('p', {class:'muted'}, 'Вопрос ' + (i+1) + ' из ' + QUIZ.length), el('h3', {}, q.q));
+    const note = el('p', {class:'muted'});
+    const next = el('button', {class:'primary', style:'display:none', onclick: () => { i++; render(); }}, i === QUIZ.length-1 ? 'Результат' : 'Дальше');
+    const btns = q.o.map((t, k) => el('button', {class:'opt', onclick: () => {
+      btns.forEach((b, j) => { b.disabled = true; if(j === q.a) b.classList.add('right'); });
+      if(k === q.a) score++; else btns[k].classList.add('wrong');
+      note.textContent = q.e; next.style.display = '';
+    }}, t));
+    box.append(...btns, note, next);
+    show(box);
+  }
+  render();
+}
+
+function viewJournal(){
+  if(!state.entries.length){
+    show(el('div', {class:'card'}, el('p', {}, 'Дневник пока пуст. Выполните первую практику.'),
+      el('button', {class:'primary', onclick: () => go('practices')}, 'К практикам')));
+    return;
+  }
+  const exp = el('button', {class:'ghost', onclick: () => {
+    const blob = new Blob([JSON.stringify(state.entries, null, 2)], {type:'application/json'});
+    const a = el('a', {href: URL.createObjectURL(blob), download:'journal.json'});
+    a.click(); URL.revokeObjectURL(a.href);
+  }}, 'Экспорт JSON');
+  show(el('p', {}, exp), ...state.entries.map((e, idx) => el('div', {class:'card entry'},
+    el('div', {class:'row'}, el('h3', {}, e.title), el('span', {class:'pill'}, new Date(e.date).toLocaleDateString('ru-RU')),
+      el('button', {class:'ghost', onclick: () => { if(confirm('Удалить запись?')){ state.entries.splice(idx,1); save(); viewJournal(); } }}, 'Удалить')),
+    el('blockquote', {}, e.text))));
+}
+
+go('today');
+</script>
+</body>
+</html>
