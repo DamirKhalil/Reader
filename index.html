@@ -199,6 +199,10 @@ body::before{content:"";position:fixed;inset:-25%;z-index:-1;pointer-events:none
 .stage.dim{opacity:.42;transition:opacity .9s}
 .stage.dim:hover,.stage.dim:focus-within{opacity:1}
 .dimmable>li,.dimmable>article{opacity:.5;transition:opacity .9s}
+.block.faded{opacity:.55;transition:opacity .9s}
+.block.faded:hover,.block.faded:focus-within{opacity:1}
+.cstep.is-focus.can-back:hover{opacity:1}
+.cstep .chead .mk{align-self:center}
 .dimmable>li:hover,.dimmable>article:hover,.dimmable>.focus,.dimmable>li:focus-within{opacity:1}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important}}
 @media (prefers-reduced-motion:reduce){.rec::before{animation:none}*{transition:none!important}}
@@ -443,8 +447,8 @@ function armBtn(label, armedLabel, fn){
 }
 
 // ---------- Навигация ----------
-const TABS = [['cycle','Цикл'],['path','Путь'],['project','Проект'],['journal','Поле и дневник'],['quiz','Вопросы']];
-let currentTab = 'cycle';
+const TABS = [['path','Этапы'],['project','Проект'],['journal','Поле и дневник'],['quiz','Вопросы']];
+let currentTab = 'path';
 function renderNav(){
   document.getElementById('nav').replaceChildren(...TABS.map(([id,label]) =>
     el('button', {type:'button', 'aria-current': String(id === currentTab), onclick: () => go(id)}, label)));
@@ -452,9 +456,9 @@ function renderNav(){
 }
 function go(tab){
   currentTab = tab; renderNav();
-  ({cycle:viewCycle, path:viewPath, project:viewProject, quiz:viewQuiz, journal:viewJournal})[tab]();
+  ({path:viewPath, project:viewProject, quiz:viewQuiz, journal:viewJournal})[tab]();
 }
-document.getElementById('brand').addEventListener('click', () => go('cycle'));
+document.getElementById('brand').addEventListener('click', () => { pathFocus = null; go('path'); });
 
 // ---------- Поле: каждая запись — посаженное семя, которое прорастает со временем ----------
 // возраст записи → фаза роста: росток (сегодня), побег (1+ день), стебель (3+), цветок (7+)
@@ -593,184 +597,114 @@ function stageHead(m){
     el('div', {}, el('h2', {}, plain(m.title)), el('p', {class:'soft'}, m.idea)));
 }
 
-// ---------- Рабочий цикл: пять шагов, в фокусе всегда один ----------
-const CYCLE = ['Остановиться', 'Выбрать', 'Понять задание', 'Сделать', 'Посадить семя'];
-let cycle = null;
-
-function startCycle(id){
-  const item = findItem(id);
-  cycle = {step:0, item, isStep: PROJECT_STEPS.includes(item), picked:true};
-  go('cycle');
-}
-function newCycle(item, isStep){
-  cycle = {step:0, item: item || suggested(), isStep: !!isStep, picked:false};
-  viewCycle();
-}
-
-function viewCycle(){
-  if(!cycle) cycle = {step:0, item: suggested(), isStep:false, picked:false};
-  if(!cycle.root) buildCycle();
-  show(cycle.root);
-  setStep(cycle.step, false);
-}
-
-function buildCycle(){
-  cycle.li = []; cycle.sum = []; cycle.body = [];
-  const list = el('ol', {class:'cycle'}, CYCLE.map((t, k) => {
-    const sum = el('span', {class:'csum'}), body = el('div', {class:'cbody', hidden:true});
-    const head = el('button', {class:'chead', type:'button', onclick: () => {
-      // вернуться можно к выбору и заданию, пока работа не сохранена
-      if(k < cycle.step && k >= 1 && k <= 2 && cycle.step <= 3) setStep(k);
-    }}, el('span', {class:'cnum'}, String(k+1)), el('span', {class:'ctitle'}, t), sum);
-    const li = el('li', {class:'cstep'}, head, body);
-    cycle.li.push(li); cycle.sum.push(sum); cycle.body.push(body);
-    return li;
-  }));
-  const n = state.entries.length;
-  cycle.root = el('div', {},
-    el('p', {class:'label'}, n ? 'Рабочий цикл · ' + (n+1) + '-й заход' : 'Рабочий цикл'),
-    el('h1', {}, 'Один цикл, одна практика'),
-    el('p', {class:'soft'}, 'Пять шагов по порядку. В фокусе всегда один, остальные ждут в тени, пока до них не дойдёт очередь.'),
-    list);
-  cycle.body[0].append(...buildArrive());
-  cycle.body[1].append(buildChoose());
-  if(cycle.picked) setItem();
-}
-
-function setStep(i, scroll = true){
-  cycle.step = i;
-  cycle.li.forEach((li, k) => {
-    li.className = 'cstep ' + (k === i ? 'is-focus' : k < i ? 'is-done' : 'is-later') + (k < i && k >= 1 && k <= 2 && i <= 3 ? ' can-back' : '');
-    cycle.body[k].hidden = k !== i;
-  });
-  if(scroll) cycle.li[i].scrollIntoView({behavior: reduceMotion() ? 'auto' : 'smooth', block:'start'});
-}
-const setSum = (k, t) => { cycle.sum[k].textContent = t; };
-
-// 1 · Остановиться
-function buildArrive(){
+// ---------- Этапы: пять разделов по порядку, в фокусе один ----------
+let pathFocus = null;
+function viewPath(){
+  const done = doneIds(), rec = PRACTICES.find(p => !done.has(p.id));
+  const focus = pathFocus || (rec ? rec.mod : MODULES[0].id);
+  const fi = MODULES.findIndex(x => x.id === focus);
   const first = !state.entries.length;
+  const items = MODULES.map((m, mi) => {
+    const all = PRACTICES.filter(p => p.mod === m.id), k = all.filter(p => done.has(p.id)).length;
+    const cls = m.id === focus ? 'is-focus' : (k === all.length || mi < fi) ? 'is-done' : 'is-later';
+    const stageRec = all.find(p => !done.has(p.id));
+    const head = el('button', {class:'chead', type:'button', 'aria-expanded': String(m.id === focus), onclick: () => {
+      if(m.id === focus) return;
+      pathFocus = m.id; viewPath();
+      const t = document.getElementById('st-' + m.id); if(t) t.scrollIntoView({behavior: reduceMotion() ? 'auto' : 'smooth', block:'start'});
+    }}, el('span', {class:'cnum'}, String(mi+1)), mark(m.id, 26, k > 0), el('span', {class:'ctitle'}, plain(m.title)),
+      el('span', {class:'csum'}, k === all.length ? 'пройден' : k + ' из ' + all.length));
+    const body = m.id === focus ? el('div', {class:'cbody', style:'--sc:' + stageColor(m.id)},
+      el('p', {class:'soft'}, m.idea),
+      el('ul', {class:'rows dimmable'}, all.map(p => {
+        const d = done.has(p.id);
+        return el('li', {class: (d ? 'is-done' : '') + (p === stageRec ? ' focus' : '')}, el('button', {type:'button', onclick: () => openSession(p.id)},
+          el('span', {class:'dot' + (d ? '' : ' empty')}),
+          el('span', {class:'tw'}, el('span', {class:'t'}, p.title), el('span', {class:'d'}, p.desc)),
+          el('span', {class:'m' + (p === stageRec ? ' next' : '')}, d ? 'сделано' : p === stageRec ? 'дальше' : p.min + ' мин')));
+      })),
+      stageRec ? el('div', {class:'actions'}, el('button', {class:'go', type:'button', onclick: () => openSession(stageRec.id)}, 'Начать'),
+          el('span', {class:'mono faint'}, stageRec.title + ' · ' + stageRec.min + ' мин'))
+        : el('p', {class:'mono faint', style:'margin-top:16px'}, 'Этап пройден. Любую практику можно повторить.')) : null;
+    return el('li', {class:'cstep can-back ' + cls, id:'st-' + m.id}, head, body);
+  });
+  const pr = state.project, prNext = projectNext();
+  show(
+    el('p', {class:'label'}, 'Тренажёр по книге «Из ничего»'),
+    el('h1', {}, 'Пять этапов'),
+    el('p', {class:'soft'}, first
+      ? 'Это тренажёр по мотивам идей книги Рика Рубина «Из ничего». Работа рождается в пять этапов: внимание, семя, эксперимент, ремесло, завершение. Проходите их по порядку, по одной короткой практике. В фокусе этап, в котором вы сейчас; остальные ждут в тени.'
+      : 'Этапы идут в том порядке, в каком обычно рождается работа. В фокусе этап, в котором вы сейчас; остальные ждут в тени, их можно открыть.'),
+    el('ol', {class:'cycle'}, items),
+    el('div', {class:'block faded'},
+      el('p', {class:'label'}, 'Проект'),
+      pr ? el('p', {style:'margin-top:8px'}, el('span', {style:'font:500 1.2rem var(--display)'}, pr.name), el('br'),
+            el('span', {class:'soft'}, prNext ? 'Шаг ' + (PROJECT_STEPS.indexOf(prNext)+1) + ' из ' + PROJECT_STEPS.length + ': ' + prNext.title + '. ' : 'Работа прошла весь путь. '),
+            el('button', {class:'link', type:'button', onclick: () => prNext ? openSession(prNext.id) : go('project')}, prNext ? 'Продолжить' : 'Посмотреть'))
+         : el('p', {class:'soft', style:'margin-top:8px'}, 'Проведите одну свою работу через все пять этапов за десять шагов. ',
+            el('button', {class:'link', type:'button', onclick: () => go('project')}, 'Начать проект'))));
+}
+
+function openSession(id){
+  const item = findItem(id), isStep = PROJECT_STEPS.includes(item);
+  currentTab = isStep ? 'project' : 'practices'; renderNav();
+  work(item, isStep);
+}
+
+
+function breathe(id){
+  const item = findItem(id), isStep = id.startsWith('p') && PROJECT_STEPS.includes(item);
+  const m = MODULES.find(x => x.id === item.mod), sc = stageColor(item.mod);
   const circle = el('div', {class:'breath', 'aria-hidden':'true'});
   const word = el('div', {class:'breath-word'});
-  const count = el('span', {class:'mono faint'});
-  const done = sum => { setSum(0, sum); setStep(1); };
-  let armed = false;
-  const startB = el('button', {class:'go', type:'button', onclick: () => {
-    if(reduceMotion()){
-      if(armed) return done('три вдоха');
-      armed = true; word.textContent = 'Дышите медленно'; startB.textContent = 'Готово'; return;
-    }
-    startB.disabled = true; let n = 0;
-    const alive = () => cycle && cycle.step === 0 && circle.isConnected;
-    const breath = () => {
-      if(!alive()) return;
-      if(n >= 3){ circle.classList.remove('in'); return done('три вдоха'); }
-      count.textContent = (n+1) + ' из 3';
-      circle.style.transitionDuration = '4s'; circle.classList.add('in'); word.textContent = 'Вдох';
-      setTimeout(() => { if(!alive()) return;
-        circle.style.transitionDuration = '6s'; circle.classList.remove('in'); word.textContent = 'Выдох';
-        setTimeout(() => { n++; breath(); }, 6000);
-      }, 4000);
-    };
-    breath();
-  }}, 'Три вдоха');
-  return [
-    first ? el('p', {}, 'Это тренажёр по мотивам идей книги Рика Рубина «Из ничего». Он помогает практиковать творческий процесс: замечать, собирать идеи, пробовать, отбирать лишнее и отпускать готовое. Каждый заход — короткий цикл из пяти шагов, как этот.') : null,
-    el('p', {class:'soft'}, 'Прежде чем начать, остановитесь. Три медленных вдоха, около 30 секунд, помогут оставить за порогом всё, что было до этого.'),
-    el('div', {class:'breath-wrap'}, circle, word),
-    el('div', {class:'actions'}, startB, el('button', {class:'quiet', type:'button', onclick: () => done('без дыхания')}, 'Пропустить'), count)
-  ];
+  const count = el('p', {class:'mono faint'});
+  const enter = el('button', {class:'go', type:'button', onclick: () => work(item, isStep)}, 'Начать');
+  const box = el('section', {class:'threshold', style:'--sc:' + sc},
+    el('p', {class:'label'}, plain(m.title) + ' · ' + item.title),
+    circle, word,
+    el('p', {class:'soft', style:'max-width:40ch;margin:0'}, 'Три медленных вдоха. Оставьте за порогом всё, что было до этого.'),
+    el('div', {class:'row'}, enter, count));
+  show(box);
+  if(reduceMotion()){ word.textContent = 'Дышите'; return; }
+  let n = 0;
+  const cycle = () => {
+    if(!box.isConnected) return;
+    if(n >= 3){ work(item, isStep); return; }
+    count.textContent = (n+1) + ' из 3';
+    circle.style.transitionDuration = '4s'; circle.classList.add('in'); word.textContent = 'Вдох';
+    setTimeout(() => {
+      if(!box.isConnected) return;
+      circle.style.transitionDuration = '6s'; circle.classList.remove('in'); word.textContent = 'Выдох';
+      setTimeout(() => { n++; cycle(); }, 6000);
+    }, 4000);
+  };
+  setTimeout(cycle, 400);
 }
 
-// 2 · Выбрать
-function buildChoose(){
-  const box = el('div');
-  const pick = id => { cycle.item = findItem(id); cycle.isStep = PROJECT_STEPS.includes(cycle.item); cycle.picked = true; render(); };
-  function render(){
-    const it = cycle.item, m = MODULES.find(x => x.id === it.mod), pr = state.project, prNext = projectNext();
-    const listBox = el('ul', {class:'rows', hidden:true}, PRACTICES.map(p => el('li', {}, el('button', {type:'button', onclick: () => pick(p.id)},
-      el('span', {class:'num'}, String(MODULES.findIndex(x => x.id === p.mod)+1)),
-      el('span', {class:'tw'}, el('span', {class:'t'}, p.title)),
-      el('span', {class:'m'}, doneIds().has(p.id) ? 'сделано' : p.min + ' мин')))));
-    box.replaceChildren(
-      el('p', {class:'soft'}, cycle.isStep ? 'Следующий шаг вашего проекта:' : cycle.picked ? 'Вы выбрали эту практику:' : 'Практики идут по порядку этапов. Следующая на вашем пути:'),
-      el('div', {class:'pick', style:'--sc:' + stageColor(it.mod)},
-        el('div', {class:'row', style:'gap:14px'}, mark(it.mod, 30, true),
-          el('p', {class:'label'}, cycle.isStep ? '«' + pr.name + '» · шаг ' + (PROJECT_STEPS.indexOf(it)+1) + ' из ' + PROJECT_STEPS.length
-            : 'Этап ' + (MODULES.indexOf(m)+1) + ' из 5 · ' + plain(m.title))),
-        el('h2', {style:'margin-top:12px'}, it.title),
-        el('p', {style:'margin-top:8px'}, cycle.isStep ? it.text : it.desc),
-        el('p', {class:'mono faint'}, it.min + ' мин' + (cycle.isStep ? '' : ' · ' + m.idea))),
-      el('div', {class:'actions'},
-        el('button', {class:'go', type:'button', onclick: () => {
-          if(cycle.builtFor !== it) setItem();
-          setSum(1, it.title); setStep(2);
-        }}, 'Взять'),
-        el('button', {class:'quiet', type:'button', onclick: () => { listBox.hidden = !listBox.hidden; }}, 'Другая практика'),
-        prNext && it !== prNext ? el('button', {class:'quiet', type:'button', onclick: () => pick(prNext.id)}, 'Шаг проекта') : null,
-        !pr ? el('button', {class:'quiet', type:'button', onclick: () => go('project')}, 'Начать проект') : null),
-      listBox);
-  }
-  render();
-  return box;
-}
 
-// 3 и 4 · задание и работа собираются под выбранную практику
-function setItem(){
-  const w = buildWork(cycle.item, cycle.isStep, onSaved);
-  cycle.builtFor = cycle.item;
-  cycle.body[2].replaceChildren(...w.read);
-  cycle.body[3].replaceChildren(...w.work);
-  cycle.body[4].replaceChildren();
-  [2,3,4].forEach(k => setSum(k, ''));
-  if(cycle.picked) setSum(1, cycle.item.title);
-}
-
-function onSaved(text){
-  setSum(3, words(text) + ' ' + plural(words(text),'слово','слова','слов'));
-  renderNav();
-  const it = cycle.item, isStep = cycle.isStep;
-  const next = isStep ? projectNext() : nextPractice(it.id);
-  const canvas = el('canvas', {class:'field', role:'img', 'aria-label':'Поле с новой посадкой'});
-  const caption = el('p', {class:'caption mono'});
-  const stepsDone = isStep ? PROJECT_STEPS.filter(x => state.project.steps[x.id]).length : 0;
-  cycle.body[4].replaceChildren(
-    el('p', {}, (isStep ? 'Шаг ' + stepsDone + ' из ' + PROJECT_STEPS.length + ' пройден. ' : '') + 'Семя посажено, ответ записан в дневник.'),
-    canvas, caption,
-    el('p', {class:'mono faint', style:'margin:4px 0 0'}, 'Сегодня это росток. Через день появится побег, через три дня крепкий стебель, через неделю цветок.'),
-    el('div', {class:'block'},
-      el('p', {class:'label'}, 'Следующий цикл'),
-      next ? el('h2', {style:'margin-top:8px'}, next.title) : el('p', {class:'soft', style:'margin-top:8px'}, isStep ? 'Проект прошёл все пять этапов.' : 'Все практики пройдены. Любую можно повторить.'),
-      el('div', {class:'actions'},
-        el('button', {class:'go', type:'button', onclick: () => newCycle(next, isStep && !!next)}, 'Новый цикл'),
-        el('button', {class:'quiet', type:'button', onclick: () => go('journal')}, 'Поле и дневник'))));
-  setStep(4);
-  drawField(canvas, caption);
-}
-
-function buildWork(item, isStep, onDone){
-  const mode = MODES[item.id] || {};
-  const pr = state.project, prev = isStep && pr.steps[item.id];
+function work(item, isStep){
+  const mode = MODES[item.id] || {}, sc = stageColor(item.mod);
+  const m = MODULES.find(x => x.id === item.mod), pr = state.project;
+  const prev = isStep && pr.steps[item.id];
 
   // время: явная кнопка, цифры на виду; если начать писать, запустится само
   const total = item.min * 60; let left = total, running = false, everStarted = false;
-  const fill = el('i'), line = el('div', {class:'timeline'}, fill);
+  const fill = el('i');
   const fmt = n => String(Math.floor(n/60)).padStart(2,'0') + ':' + String(n%60).padStart(2,'0');
   const digits = el('span', {class:'timer-digits'}, fmt(left));
   const timeLabel = el('span', {class:'mono faint'}, 'не запущено');
   const timeBtn = el('button', {class:'go', type:'button', onclick: () => running ? pauseTime() : startTime()}, 'Старт');
   function startTime(){
     if(running || !left) return; running = everStarted = true;
-    pauseActive = () => { if(running) pauseTime(); };
     timeBtn.textContent = 'Пауза'; timeBtn.classList.replace('go', 'quiet');
-    timeLabel.textContent = 'идёт запись'; timeLabel.classList.add('rec'); line.classList.add('on');
+    timeLabel.textContent = 'идёт запись'; timeLabel.classList.add('rec'); fill.parentNode && fill.parentNode.classList.add('on');
     timerId = setInterval(() => {
       left = Math.max(left - 1, 0); fill.style.width = (left/total*100) + '%'; digits.textContent = fmt(left);
-      if(!left){ clearInterval(timerId); running = false; timeBtn.hidden = true; line.classList.remove('on'); timeLabel.classList.remove('rec'); timeLabel.textContent = 'время вышло'; say('Время вышло. Можно закончить мысль.'); }
+      if(!left){ clearInterval(timerId); running = false; timeBtn.hidden = true; fill.parentNode.classList.remove('on'); timeLabel.classList.remove('rec'); timeLabel.textContent = 'время вышло'; say('Время вышло. Можно закончить мысль.'); }
     }, 1000);
   }
   function pauseTime(){
-    clearInterval(timerId); running = false; timeBtn.textContent = 'Продолжить'; line.classList.remove('on');
+    clearInterval(timerId); running = false; timeBtn.textContent = 'Продолжить'; fill.parentNode.classList.remove('on');
     timeLabel.classList.remove('rec'); timeLabel.textContent = 'пауза';
   }
   const ta = el('textarea', {class:'page', id:'page-' + item.id, placeholder:'Начните здесь…', 'aria-label': item.prompt});
@@ -780,9 +714,12 @@ function buildWork(item, isStep, onDone){
   function say(t, ms){ if(t && t !== hint.textContent){ hint.classList.remove('show'); void hint.offsetWidth; hint.classList.add('show'); } hint.textContent = t; clearTimeout(hintT); if(ms) hintT = setTimeout(() => hint.textContent = '', ms); }
 
   const extras = [];
-  // список: каждая строка — точка
+  // список: каждая строка — семя
   let seedsRow = null, reached = false, lastK = Infinity;
-  if(mode.list){ seedsRow = el('div', {class:'seeds', 'aria-hidden':'true'}); extras.push(seedsRow); }
+  if(mode.list){
+    seedsRow = el('div', {class:'seeds', 'aria-hidden':'true'});
+    extras.push(seedsRow);
+  }
   function drawSeeds(){
     if(!seedsRow) return;
     const k = lines(ta.value), target = mode.list;
@@ -808,9 +745,10 @@ function buildWork(item, isStep, onDone){
   function drawGauge(){
     if(orig == null) return;
     const a = words(orig), b = words(ta.value), pct = a ? Math.round(b/a*100) : 100;
+    const bar = el('i', {style:'width:' + Math.min(pct,100) + '%'});
     gauge.replaceChildren(el('div', {class:'gauge'},
       el('span', {class:'mono faint'}, a + ' → ' + b + ' ' + plural(b,'слово','слова','слов')),
-      el('div', {class:'track', title:'Отметка посередине — половина'}, el('i', {style:'width:' + Math.min(pct,100) + '%'}), el('b')),
+      el('div', {class:'track', title:'Отметка посередине — половина'}, bar, el('b')),
       el('span', {class:'mono', style:'color:' + (pct <= 50 ? 'var(--ink)' : 'var(--faint)')}, pct + '%')));
   }
   let reduceStart = null;
@@ -818,12 +756,13 @@ function buildWork(item, isStep, onDone){
     if(!prev && typeof mode.reduce === 'string' && pr && pr.steps[mode.reduce]) ta.value = pr.steps[mode.reduce].text;
     reduceStart = el('button', {class:'go', type:'button', onclick: () => {
       if(!words(ta.value)){ say('Сначала нужен исходный текст.', 3000); ta.focus(); return; }
-      orig = ta.value; reduceStart.remove(); saveBtn.classList.replace('quiet', 'go');
+      orig = ta.value; reduceStart.remove();
       gauge.before(el('details', {class:'orig'}, el('summary', {class:'mono'}, 'Исходник · ' + words(orig) + ' ' + plural(words(orig),'слово','слова','слов')), el('div', {}, orig)));
       drawGauge(); say('Убирайте лишнее. Цель — половина.', 4000); ta.focus(); if(!everStarted) startTime();
     }}, 'Начать сокращение');
     extras.push(gauge);
   }
+
   ta.addEventListener('input', () => { if(!everStarted) startTime(); drawSeeds(); drawGauge(); });
 
   const oracle = el('p', {class:'oracle', hidden:true});
@@ -832,12 +771,11 @@ function buildWork(item, isStep, onDone){
     oracle.hidden = true; void oracle.offsetWidth; oracle.textContent = card; oracle.hidden = false; stuck.textContent = 'Другая карта';
   }}, 'Застряли?');
 
-  const saveBtn = el('button', {class: reduceStart ? 'quiet' : 'go', type:'button', onclick: finish}, mode.release ? 'Отпустить' : 'Сохранить');
+  const saveBtn = el('button', {class:'go', type:'button', onclick: finish}, mode.release ? 'Отпустить' : 'Сохранить');
   function finish(){
     let text = ta.value.trim();
     if(!text){ say('Напишите хотя бы строку.', 3000); ta.focus(); return; }
     if(orig != null) text += '\n\n[было ' + words(orig) + ' ' + plural(words(orig),'слово','слова','слов') + ', стало ' + words(ta.value) + ']';
-    if(running) pauseTime(); pauseActive = null;
     const date = new Date().toISOString();
     if(isStep){
       pr.steps[item.id] = {text, date};
@@ -846,16 +784,16 @@ function buildWork(item, isStep, onDone){
       state.entries.unshift({practice:item.id, title:item.title, text, date});
     }
     save(); freshAt = Date.now();
-    if(mode.release) release(text); else onDone(text);
+    if(mode.release) release(); else doneScreen(item, isStep);
   }
-  function release(text){
+  function release(){
+    clearInterval(timerId);
     const out = el('div', {class:'release', 'aria-live':'polite'});
     const parts = ta.value.split(/(\s+)/).map(w => el('span', {}, w));
     out.append(...parts);
     ta.replaceWith(out); saveBtn.disabled = true;
     say('Работа больше не только ваша.');
-    const end = () => { if(out.isConnected){ freshAt = Date.now(); onDone(text); } };
-    if(reduceMotion()){ setTimeout(end, 1600); return; }
+    if(reduceMotion()){ setTimeout(() => doneScreen(item, isStep), 1600); return; }
     requestAnimationFrame(() => requestAnimationFrame(() => {
       parts.forEach((s, i) => {
         s.style.transitionDelay = Math.min(i*12, 900) + 'ms';
@@ -863,55 +801,80 @@ function buildWork(item, isStep, onDone){
         s.style.opacity = '0';
       });
     }));
-    setTimeout(end, 3800);
+    setTimeout(() => { if(out.isConnected) doneScreen(item, isStep); }, 3800);
   }
 
   const ctx = isStep ? item.ctx.filter(c => pr.steps[c]).map(c => {
     const src = PROJECT_STEPS.find(x => x.id === c);
     return el('div', {class:'ctx'}, el('p', {class:'label'}, 'Вы писали: ' + src.title), el('blockquote', {}, pr.steps[c].text));
   }) : [];
-  const note = [mode.list ? 'Каждая новая строка закрасит точку. Цель: ' + mode.list + '.' : null, mode.free ? MOD_NOTE.free : null, mode.reduce ? MOD_NOTE.reduce : null, mode.release ? MOD_NOTE.release : null].filter(Boolean).join(' ') || null;
 
-  drawSeeds(); lastK = lines(ta.value);
-  return {
-    read: [
-      el('div', {style:'--sc:' + stageColor(item.mod)},
+  const list = isStep ? PROJECT_STEPS : PRACTICES;
+  const idx = list.indexOf(item), sib = list.filter(x => x.mod === item.mod);
+  const stageNo = MODULES.indexOf(m) + 1;
+  const prevItem = list[idx-1], nextItem = list[idx+1];
+  const canOpen = x => !isStep || pr.steps[x.id] || x === PROJECT_STEPS.find(s => !pr.steps[s.id]);
+  const breath = !prev ? el('button', {class:'link', type:'button', onclick: () => breathe(item.id)}, 'Сначала три вдоха, 30 секунд') : null;
+
+  show(
+    el('div', {class:'crumbs'},
+      el('button', {class:'quiet', type:'button', onclick: () => go(isStep ? 'project' : 'path')}, '← ' + (isStep ? 'Проект' : 'Этапы')),
+      el('span', {class:'mono faint'}, 'Этап ' + stageNo + ' из 5 · ' + plain(m.title) + ' · ' + (isStep ? 'шаг ' + (idx+1) + ' из ' + list.length : 'практика ' + (sib.indexOf(item)+1) + ' из ' + sib.length))),
+    el('div', {style:'--sc:' + sc},
+      el('div', {class:'row', style:'margin-top:24px;gap:16px'}, mark(item.mod, 30, true), el('p', {class:'label'}, (isStep ? pr.name + ' · ' : '') + item.min + ' мин')),
+      el('h1', {}, item.title),
+      breath ? el('p', {class:'soft'}, 'Не спешите начинать. ', breath, ' помогут переключиться.') : null,
+      el('section', {class:'sec'}, el('p', {class:'label'}, '1 · Задание'),
         el('p', {}, isStep ? item.text : item.desc),
         item.steps ? el('ol', {class:'steps'}, item.steps.map(x => el('li', {}, el('span', {}, x)))) : null,
-        ...ctx,
-        note ? el('p', {class:'mono', style:'margin-top:20px;color:var(--amber)'}, note) : null,
-        el('div', {class:'actions'}, el('button', {class:'go', type:'button', onclick: () => { setSum(2, item.min + ' мин'); setStep(3); }}, 'Понятно, начать')))
-    ],
-    work: [
-      el('div', {style:'--sc:' + stageColor(item.mod)},
+        ...ctx),
+      el('section', {class:'sec'}, el('p', {class:'label'}, '2 · Время'),
         el('div', {class:'timebar'}, el('div', {class:'row'}, digits, timeLabel), timeBtn),
-        line,
-        el('p', {class:'prompt'}, item.prompt),
+        el('div', {class:'timeline'}, fill)),
+      el('section', {class:'sec'}, el('p', {class:'label'}, '3 · Ответ'),
+        el('p', {class:'prompt', style:'margin-top:0'}, item.prompt),
         ...extras, ta, hint,
         el('div', {class:'actions'}, reduceStart || saveBtn, reduceStart ? saveBtn : null, freeToggle, stuck),
-        oracle)
-    ]
-  };
+        oracle),
+      el('div', {class:'pager'},
+        prevItem && canOpen(prevItem) ? el('button', {class:'quiet', type:'button', onclick: () => openSession(prevItem.id)}, '← ' + prevItem.title) : el('span'),
+        nextItem && canOpen(nextItem) ? el('button', {class:'quiet', type:'button', onclick: () => openSession(nextItem.id)}, nextItem.title + ' →') : el('span'))));
+  if(reduceStart) saveBtn.classList.replace('go', 'quiet');
+  drawSeeds(); lastK = lines(ta.value);
+  if(mode.free) say('Здесь стирать нельзя: пишите всё подряд, отбор будет позже.', 6000);
+  if(mode.reduce) say('Вставьте или напишите исходный текст, затем начните сокращение.');
 }
 
-// ---------- Путь: все практики, в фокусе следующая ----------
-function viewPath(){
-  const done = doneIds(), rec = PRACTICES.find(p => !done.has(p.id));
+
+function doneScreen(item, isStep){
+  renderNav(); pathFocus = null;
+  const pr = state.project;
+  const next = isStep ? PROJECT_STEPS.find(x => !pr.steps[x.id]) : nextPractice(item.id);
+  const nm = next && MODULES.find(x => x.id === next.mod);
+  if(!isStep) pathFocus = next ? next.mod : item.mod;
+  const stepsDone = isStep ? PROJECT_STEPS.filter(x => pr.steps[x.id]).length : 0;
+  const plantCanvas = el('canvas', {class:'field', role:'img', 'aria-label':'Поле с новой посадкой'});
   show(
-    el('p', {class:'label'}, 'Путь'),
-    el('h1', {}, 'Пять этапов'),
-    el('p', {class:'soft'}, 'Практики выстроены в том порядке, в каком обычно рождается работа. В фокусе ваша следующая; остальные доступны, просто тише. Любая практика открывается как новый цикл.'),
-    ...MODULES.map((m, mi) => el('section', {class:'stage' + (rec && rec.mod !== m.id ? ' dim' : ''), id:'st-' + m.id, style:'--sc:' + stageColor(m.id)},
-      el('p', {class:'label', style:'margin-bottom:12px'}, 'Этап ' + (mi+1) + ' из 5'),
-      stageHead(m),
-      el('ul', {class:'rows' + (rec ? ' dimmable' : '')}, PRACTICES.filter(p => p.mod === m.id).map(p => {
-        const d = done.has(p.id);
-        return el('li', {class: (d ? 'is-done' : '') + (p === rec ? ' focus' : '')}, el('button', {type:'button', onclick: () => startCycle(p.id)},
-          el('span', {class:'dot' + (d ? '' : ' empty')}),
-          el('span', {class:'tw'}, el('span', {class:'t'}, p.title), el('span', {class:'d'}, p.desc)),
-          el('span', {class:'m' + (p === rec ? ' next' : '')}, d ? 'сделано' : p === rec ? 'дальше' : p.min + ' мин')));
-      })))));
+    el('div', {class:'done-mark'}, mark(item.mod, 64, true)),
+    el('p', {class:'label'}, 'Сохранено'),
+    el('h1', {}, isStep ? 'Шаг ' + stepsDone + ' из ' + PROJECT_STEPS.length + ' пройден' : 'Практика выполнена'),
+    el('p', {class:'soft'}, 'Ответ записан в дневник, а на поле посажено новое семя. Сегодня это росток; загляните через несколько дней.'),
+    plantCanvas,
+    next ? el('div', {class:'block', style:'--sc:' + stageColor(next.mod)},
+        el('p', {class:'label'}, isStep ? 'Следующий шаг проекта' : 'Следующая практика'),
+        el('h2', {style:'margin-top:8px'}, next.title),
+        el('p', {class:'soft', style:'margin-top:8px'}, isStep ? next.text : next.desc),
+        el('div', {class:'row'}, el('button', {class:'go', type:'button', onclick: () => openSession(next.id)}, isStep ? 'Перейти к шагу' : 'Начать'),
+          el('span', {class:'mono faint'}, plain(nm.title) + ' · ' + next.min + ' мин')))
+      : el('p', {class:'block'}, isStep ? 'Проект прошёл все пять этапов. Работа готова к тому, чтобы её увидели.' : 'Все практики пройдены. Повторяйте любые: они работают и во второй раз.'),
+    el('div', {class:'row', style:'margin-top:44px;gap:28px'},
+      el('button', {class:'link', type:'button', onclick: () => go(isStep ? 'project' : 'path')}, isStep ? 'К проекту' : 'К этапам'),
+      el('button', {class:'link', type:'button', onclick: () => go('journal')}, 'Дневник'),
+      el('button', {class:'link', type:'button', onclick: () => go('journal')}, 'Поле')));
+  drawField(plantCanvas, el('p'));
 }
+
+
 
 // ---------- Проект: одна работа через все этапы, в фокусе следующий шаг ----------
 function viewProject(){
@@ -931,13 +894,13 @@ function viewProject(){
     el('h1', {}, pr.name),
     el('div', {class:'path', 'aria-label': done + ' из ' + PROJECT_STEPS.length + ' шагов'}, PROJECT_STEPS.map(st =>
       el('span', {class:'dot' + (pr.steps[st.id] ? '' : ' empty') + (st === next ? ' next' : ''), style:'--sc:' + stageColor(st.mod)}))),
-    next ? el('div', {class:'row', style:'margin-top:26px'}, el('button', {class:'go', type:'button', onclick: () => startCycle(next.id)}, 'Продолжить'),
+    next ? el('div', {class:'row', style:'margin-top:26px'}, el('button', {class:'go', type:'button', onclick: () => openSession(next.id)}, 'Продолжить'),
       el('span', {class:'mono faint'}, 'шаг ' + (done+1) + ': ' + next.title))
       : el('p', {class:'soft', style:'margin-top:26px'}, 'Работа прошла весь путь. Теперь она принадлежит не только вам.'),
     ...MODULES.map(m => el('section', {class:'stage' + (next && next.mod !== m.id ? ' dim' : ''), style:'--sc:' + stageColor(m.id)}, stageHead(m),
       el('ul', {class:'rows' + (next ? ' dimmable' : '')}, PROJECT_STEPS.filter(st => st.mod === m.id).map(st => {
         const d = pr.steps[st.id], open = d || st === next;
-        return el('li', {class: (d ? 'is-done' : '') + (st === next ? ' focus' : '')}, el('button', {type:'button', disabled: !open, onclick: () => startCycle(st.id)},
+        return el('li', {class: (d ? 'is-done' : '') + (st === next ? ' focus' : '')}, el('button', {type:'button', disabled: !open, onclick: () => openSession(st.id)},
           el('span', {class:'num'}, String(PROJECT_STEPS.indexOf(st)+1)),
           el('span', {class:'tw'}, el('span', {class:'t'}, st.title), el('span', {class:'d'}, st.text)),
           el('span', {class:'m' + (st === next ? ' next' : '')}, d ? 'сделано' : st === next ? 'дальше' : st.min + ' мин')));
@@ -1002,11 +965,11 @@ function viewJournal(){
             armBtn('Удалить', 'Точно?', () => { state.entries.splice(idx,1); save(); viewJournal(); })),
           el('h3', {}, e.title), el('div', {class:'txt'}, e.text));
       })))
-      : el('div', {class:'block'}, el('button', {class:'go', type:'button', onclick: () => go('cycle')}, 'Начать цикл')));
+      : el('div', {class:'block'}, el('button', {class:'go', type:'button', onclick: () => go('path')}, 'Начать цикл')));
   drawField(canvas, caption);
 }
 
-go('cycle');
+go('path');
 </script>
 </body>
 </html>
