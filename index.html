@@ -4,58 +4,91 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Тренажёр творческого акта</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono&family=DM+Sans:wght@400;500&family=Instrument+Serif&display=swap">
 <style>
-:root{--bg:#faf8f4;--card:#fff;--ink:#1d1b18;--muted:#6b665e;--line:#e4dfd6;--accent:#b4472f;--accent-ink:#fff;--ok:#2f7d4f}
-@media (prefers-color-scheme:dark){:root{--bg:#161412;--card:#201d1a;--ink:#f1ede6;--muted:#a39d92;--line:#3a352f;--accent:#e0795f;--accent-ink:#161412;--ok:#6fc08e}}
+/* Концепция: студийная тишина. Много воздуха, крупный сериф, чёрные кнопки;
+   цвет живёт только в иллюстрациях пяти этапов. */
+:root{--bg:#f5f6f4;--card:#ffffff;--ink:#101210;--muted:#5f645d;--line:#dcdfda;--tint:#eceee9;--ok:#1f7a4f;--warn:#b4411f;
+ --c1:#2b6f90;--c2:#5f8a2c;--c3:#d08216;--c4:#6c4fb8;--c5:#c4392f;
+ --serif:"Instrument Serif",Georgia,serif;--sans:"DM Sans",system-ui,sans-serif;--mono:"DM Mono",ui-monospace,Menlo,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d0f0d;--card:#161916;--ink:#f1f2ee;--muted:#9ea49b;--line:#272b26;--tint:#1d201c;--ok:#62c795;--warn:#f0906a;--c1:#5fb0d6;--c2:#9bc45f;--c3:#f0b247;--c4:#a58cf0;--c5:#f27a70;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d0f0d;--card:#161916;--ink:#f1f2ee;--muted:#9ea49b;--line:#272b26;--tint:#1d201c;--ok:#62c795;--warn:#f0906a;--c1:#5fb0d6;--c2:#9bc45f;--c3:#f0b247;--c4:#a58cf0;--c5:#f27a70;color-scheme:dark}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Georgia,"Times New Roman",serif}
-.wrap{max-width:760px;margin:0 auto;padding:0 16px 64px}
-header{padding:28px 0 8px}
-h1{font-size:1.6rem;margin:0 0 4px;font-weight:600}
-.sub{color:var(--muted);margin:0;font-size:.95rem}
-nav{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0;border-bottom:1px solid var(--line);padding-bottom:10px}
-nav button{font:inherit;font-size:.95rem;background:none;border:1px solid transparent;border-radius:999px;padding:6px 14px;color:var(--muted);cursor:pointer}
-nav button[aria-current=true]{border-color:var(--ink);color:var(--ink)}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:12px 0}
-.card h3{margin:0 0 4px;font-size:1.05rem}
-.card p{margin:4px 0}
-.muted{color:var(--muted);font-size:.9rem}
-.mod h2{font-size:1.15rem;margin:28px 0 2px}
-.mod .idea{color:var(--muted);margin:0 0 8px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--sans)}
+.wrap{max-width:920px;margin:0 auto;padding-inline:16px;padding-block:0 72px;min-width:0}
+.bar-top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.bar-in{max-width:920px;margin:0 auto;padding:10px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.brand{font:400 1.35rem/1 var(--serif);letter-spacing:.01em}
+nav{display:flex;gap:2px;flex-wrap:wrap}
+nav button{font:500 .9rem var(--sans);background:none;border:0;border-bottom:2px solid transparent;padding:6px 10px;color:var(--muted);cursor:pointer}
+nav button[aria-current=true]{color:var(--ink);border-bottom-color:var(--ink)}
+h1,h2,h3{font-family:var(--serif);font-weight:400;margin:0;text-wrap:balance}
+.eyebrow{font:500 .75rem var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0}
+.hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:28px;align-items:center;padding-block:40px 24px}
+.hero h1{font-size:clamp(2.4rem,7vw,4.2rem);line-height:1.02;margin:12px 0 16px;letter-spacing:-.01em}
+.hero p.lead{color:var(--muted);margin:0 0 22px;max-width:46ch}
+.hero canvas{width:100%;height:240px;display:block;border-radius:16px;background:var(--tint)}
+@media (max-width:640px){.hero{grid-template-columns:minmax(0,1fr)}}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.pill{font-size:.8rem;border:1px solid var(--line);border-radius:999px;padding:1px 10px;color:var(--muted)}
-.done{color:var(--ok);border-color:var(--ok)}
-button.primary,button.ghost{font:inherit;border-radius:8px;padding:8px 16px;cursor:pointer}
-button.primary{background:var(--accent);color:var(--accent-ink);border:1px solid var(--accent)}
+.pill{font:500 .75rem var(--sans);border:1px solid var(--line);border-radius:999px;padding:2px 10px;color:var(--muted);white-space:nowrap}
+.pill.done{color:var(--ok);border-color:var(--ok)}
+.pill.now{color:var(--ink);border-color:var(--ink)}
+.muted{color:var(--muted)}
+button.primary,button.ghost{font:500 .95rem var(--sans);border-radius:999px;padding:10px 20px;cursor:pointer}
+button.primary{background:var(--ink);color:var(--bg);border:1px solid var(--ink)}
 button.ghost{background:none;color:var(--ink);border:1px solid var(--line)}
+button.ghost:hover{border-color:var(--ink)}
 button:disabled{opacity:.5;cursor:default}
-.item{cursor:pointer}
-.item:hover{border-color:var(--accent)}
-textarea{width:100%;min-height:150px;font:inherit;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px;resize:vertical}
-.timer{font:600 2.4rem/1 ui-monospace,Menlo,monospace;letter-spacing:.04em}
-ol.steps{padding-left:20px}
-.opt{display:block;width:100%;text-align:left;font:inherit;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:8px 0;cursor:pointer}
+button:focus-visible,textarea:focus-visible,input:focus-visible,.item:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.ico{display:inline-flex;flex:none;width:var(--s,56px);height:var(--s,56px);color:var(--sc,var(--ink));background:color-mix(in srgb,var(--sc,var(--ink)) 12%,var(--card));border-radius:14px;padding:calc(var(--s,56px)*.12)}
+.ico svg{width:100%;height:100%;display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;min-width:0}
+.stack{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+.item{cursor:pointer;display:flex;gap:14px;align-items:flex-start;transition:border-color .15s}
+.item:hover{border-color:var(--ink)}
+.item .body{min-width:0;flex:1}
+.item h3{font-size:1.3rem;line-height:1.2}
+.item p{margin:2px 0 0;color:var(--muted);font-size:.92rem}
+.locked{opacity:.45;cursor:default}
+.locked:hover{border-color:var(--line)}
+.mod{margin-top:44px}
+.mod-head{display:flex;gap:16px;align-items:center}
+.mod-head h2{font-size:clamp(1.9rem,5vw,2.6rem);line-height:1}
+.mod-head p{margin:4px 0 0;color:var(--muted);max-width:52ch}
+.map{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:8px}
+@media (max-width:640px){.map{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.map .cell{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;cursor:pointer;text-align:left;font:inherit;color:inherit}
+.map .cell:hover{border-color:var(--ink)}
+.map h3{font-size:1.25rem}
+.meter{height:4px;background:var(--line);border-radius:2px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--sc,var(--ink))}
+.sect{font:400 1.7rem/1.1 var(--serif);margin:36px 0 0}
+.stats{display:flex;gap:28px;flex-wrap:wrap;margin-top:28px}
+.stats b{display:block;font:400 2.6rem/1 var(--serif)}
+.stats span{font-size:.85rem;color:var(--muted)}
+.timer{font:400 3rem/1 var(--mono);letter-spacing:.02em;font-variant-numeric:tabular-nums}
+ol.steps{padding-left:20px;margin:12px 0 0}
+ol.steps li{margin:6px 0}
+.detail-head{display:flex;gap:16px;align-items:center;margin:20px 0 4px}
+.detail-head h2{font-size:clamp(2rem,6vw,3rem);line-height:1}
+textarea,input[type=text]{width:100%;font:inherit;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:12px}
+textarea{min-height:170px;resize:vertical}
+.opt{display:block;width:100%;text-align:left;font:inherit;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:8px 0;cursor:pointer}
+.opt:hover:not(:disabled){border-color:var(--ink)}
 .opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,var(--card))}
-.opt.wrong{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--card))}
-.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:10px}
-.bar i{display:block;height:100%;background:var(--accent)}
-.stats{display:flex;gap:12px;flex-wrap:wrap}
-.stats .card{flex:1;min-width:140px;text-align:center;margin:0}
-.stats b{display:block;font-size:1.6rem}
-.entry blockquote{margin:6px 0 0;white-space:pre-wrap;border-left:3px solid var(--line);padding-left:12px}
-footer{margin-top:40px;color:var(--muted);font-size:.8rem}
+.opt.wrong{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,var(--card))}
+.entry blockquote{margin:8px 0 0;white-space:pre-wrap;border-left:2px solid var(--line);padding-left:14px;overflow-wrap:anywhere}
+.path{display:flex;gap:6px;margin-top:16px}
+.path i{flex:1;height:6px;border-radius:3px;background:var(--line)}
+.path i.on{background:var(--sc)}
+footer{margin-top:56px;color:var(--muted);font-size:.8rem;max-width:62ch}
 </style>
 </head>
 <body>
-<div class="wrap">
-<header>
-  <h1>Тренажёр творческого акта</h1>
-  <p class="sub">Практики по мотивам идей Рика Рубина из книги «Из ничего. Искусство создавать искусство»</p>
-</header>
-<nav id="nav"></nav>
-<main id="view"></main>
-<footer>Независимый учебный проект. Упражнения написаны своими словами и отражают общие идеи книги, а не воспроизводят её текст. Данные хранятся только в вашем браузере.</footer>
-</div>
+<div class="bar-top"><div class="bar-in"><div class="brand">Из ничего · тренажёр</div><nav id="nav"></nav></div></div>
+<div class="wrap"><main id="view"></main>
+<footer>Независимый учебный проект по мотивам идей книги Рика Рубина «Из ничего. Искусство создавать искусство». Он не связан с автором и издателем. Упражнения написаны своими словами, текст книги не воспроизводится. Данные хранятся только в вашем браузере.</footer></div>
 
 <script>
 // ---------- Данные ----------
@@ -193,26 +226,43 @@ function streak(){
   return n;
 }
 
+
 // ---------- Утилиты DOM ----------
 function el(tag, attrs, ...kids){
   const n = document.createElement(tag);
   for(const [k,v] of Object.entries(attrs||{})){
+    if(v == null) continue;
     if(k === 'class') n.className = v;
     else if(k.startsWith('on')) n.addEventListener(k.slice(2), v);
     else n.setAttribute(k, v);
   }
-  for(const c of kids.flat()) n.append(c);
+  for(const c of kids.flat()) if(c != null && c !== false) n.append(c);
   return n;
 }
 const view = document.getElementById('view');
 function show(...nodes){ view.replaceChildren(...nodes); window.scrollTo(0,0); }
 
+// ---------- Иллюстрации этапов ----------
+const ART = {
+  attention:'<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="32" cy="32" r="4" fill="currentColor" stroke="none"/><circle cx="32" cy="32" r="12"/><circle cx="32" cy="32" r="20" opacity=".65"/><circle cx="32" cy="32" r="28" opacity=".35"/></svg>',
+  seed:'<svg viewBox="0 0 64 64" fill="currentColor"><circle cx="32" cy="38" r="9"/><circle cx="14" cy="16" r="3.5"/><circle cx="48" cy="12" r="5"/><circle cx="54" cy="34" r="2.5"/><circle cx="12" cy="46" r="2.5"/><circle cx="40" cy="56" r="3"/><circle cx="26" cy="12" r="2"/></svg>',
+  experiment:'<svg viewBox="0 0 64 64" fill="currentColor"><circle cx="24" cy="26" r="16" opacity=".55"/><rect x="26" y="22" width="28" height="28" rx="2" opacity=".55"/><path d="M12 54 30 28 48 54Z" opacity=".55"/></svg>',
+  craft:'<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"><path d="M10 14h44M10 28h30M10 42h44M10 56h18"/><path d="M48 24l-6 8" stroke-width="2.5" opacity=".6"/></svg>',
+  completion:'<svg viewBox="0 0 64 64" fill="none" stroke="currentColor"><circle cx="32" cy="32" r="22" stroke-width="6"/><circle cx="32" cy="32" r="6" fill="currentColor" stroke="none"/></svg>'
+};
+const STAGE_VAR = {attention:'--c1', seed:'--c2', experiment:'--c3', craft:'--c4', completion:'--c5'};
+const stageColor = m => 'var(' + STAGE_VAR[m] + ')';
+function icon(mod, px){
+  const s = el('span', {class:'ico', style:'--sc:' + stageColor(mod) + ';--s:' + (px||56) + 'px'});
+  s.innerHTML = ART[mod]; return s;
+}
+const plain = t => t.replace(/^\d+\.\s*/, '');
+
 // ---------- Навигация ----------
 const TABS = [['today','Сегодня'],['project','Проект'],['practices','Практики'],['quiz','Тест'],['journal','Дневник']];
 let currentTab = 'today', timerId = null;
 function renderNav(){
-  const nav = document.getElementById('nav');
-  nav.replaceChildren(...TABS.map(([id,label]) =>
+  document.getElementById('nav').replaceChildren(...TABS.map(([id,label]) =>
     el('button', {'aria-current': String(id === currentTab), onclick: () => go(id)}, label)));
 }
 function go(tab){
@@ -221,140 +271,183 @@ function go(tab){
   ({today:viewToday, project:viewProject, practices:viewPractices, quiz:viewQuiz, journal:viewJournal})[tab]();
 }
 
+function armBtn(label, armedLabel, fn){
+  let t = null;
+  const b = el('button', {class:'ghost', onclick: () => {
+    if(t){ clearTimeout(t); fn(); return; }
+    b.textContent = armedLabel; t = setTimeout(() => { t = null; b.textContent = label; }, 3000);
+  }}, label);
+  return b;
+}
+
+function makeTimer(minutes){
+  let left = minutes * 60, running = false;
+  const fmt = n => String(Math.floor(n/60)).padStart(2,'0') + ':' + String(n%60).padStart(2,'0');
+  const display = el('div', {class:'timer'}, fmt(left));
+  const btn = el('button', {class:'primary', onclick: () => {
+    if(running){ clearInterval(timerId); running = false; btn.textContent = 'Продолжить'; return; }
+    running = true; btn.textContent = 'Пауза';
+    timerId = setInterval(() => {
+      left--; display.textContent = fmt(Math.max(left,0));
+      if(left <= 0){ clearInterval(timerId); running = false; btn.textContent = 'Время вышло'; btn.disabled = true; }
+    }, 1000);
+  }}, 'Старт');
+  return el('div', {class:'card row', style:'justify-content:space-between'}, display, btn);
+}
+
+// ---------- Волна в шапке ----------
+function drawWaves(canvas){
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const ctx = canvas.getContext('2d');
+  let t = 0;
+  function frame(){
+    if(!canvas.isConnected) return;
+    const dpr = window.devicePixelRatio || 1, w = canvas.clientWidth, h = canvas.clientHeight;
+    if(canvas.width !== w*dpr){ canvas.width = w*dpr; canvas.height = h*dpr; }
+    ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,w,h);
+    const cs = getComputedStyle(canvas);
+    ['--c1','--c2','--c3','--c4','--c5'].forEach((v,i) => {
+      ctx.beginPath(); ctx.lineWidth = 2; ctx.strokeStyle = cs.getPropertyValue(v).trim();
+      ctx.globalAlpha = .9;
+      for(let x=0; x<=w; x+=4){
+        const k = x / w;
+        const env = Math.sin(Math.PI * k);
+        const y = h/2 + env * (h*.34) * Math.sin(k*(4+i*1.3) + t*(.6+i*.18) + i*1.1) * (1 - i*.12);
+        x ? ctx.lineTo(x,y) : ctx.moveTo(x,y);
+      }
+      ctx.stroke();
+    });
+    t += .02;
+    if(!reduce) requestAnimationFrame(frame);
+  }
+  frame();
+}
+
 // ---------- Экраны ----------
 function practiceCard(p){
   const done = doneIds().has(p.id);
-  return el('div', {class:'card item', onclick: () => openPractice(p.id)},
-    el('div', {class:'row'}, el('h3', {}, p.title),
-      el('span', {class:'pill'}, p.min + ' мин'),
-      done ? el('span', {class:'pill done'}, 'выполнено') : ''),
-    el('p', {class:'muted'}, p.desc));
+  return el('div', {class:'card item', tabindex:'0', role:'button', onclick: () => openPractice(p.id),
+      onkeydown: e => { if(e.key === 'Enter') openPractice(p.id); }},
+    icon(p.mod, 52),
+    el('div', {class:'body'},
+      el('div', {class:'row'}, el('h3', {}, p.title), el('span', {class:'pill'}, p.min + ' мин'), done ? el('span', {class:'pill done'}, 'выполнено') : null),
+      el('p', {}, p.desc)));
 }
 
 function viewToday(){
   const done = doneIds();
   const left = PRACTICES.filter(p => !done.has(p.id));
   const pool = left.length ? left : PRACTICES;
-  const seed = Number(dayKey(new Date()).replaceAll('-',''));
-  const pick = pool[seed % pool.length];
-  const pct = Math.round(done.size / PRACTICES.length * 100);
-  show(
+  const pick = pool[Number(dayKey(new Date()).replaceAll('-','')) % pool.length];
+  const canvas = el('canvas', {'aria-hidden':'true'});
+  const hero = el('section', {class:'hero'},
+    el('div', {},
+      el('p', {class:'eyebrow'}, 'Практики по книге «Из ничего»'),
+      el('h1', {}, 'Творчество начинается с внимания'),
+      el('p', {class:'lead'}, 'Пять этапов: от первых наблюдений до законченной работы. Короткие упражнения, таймер и дневник, в котором остаётся весь ваш путь.'),
+      el('div', {class:'row'},
+        el('button', {class:'primary', onclick: () => openPractice(pick.id)}, 'Практика дня'),
+        el('button', {class:'ghost', onclick: () => go('project')}, state.project ? 'Мой проект' : 'Начать проект'))),
+    canvas);
+  const map = el('div', {class:'map'}, MODULES.map(m => {
+    const all = PRACTICES.filter(p => p.mod === m.id), n = all.filter(p => done.has(p.id)).length;
+    return el('button', {class:'cell', style:'--sc:' + stageColor(m.id), onclick: () => go('practices')},
+      icon(m.id, 44), el('h3', {}, plain(m.title)),
+      el('div', {class:'meter'}, el('i', {style:'width:' + Math.round(n/all.length*100) + '%'})),
+      el('span', {class:'muted', style:'font-size:.8rem'}, n + ' из ' + all.length));
+  }));
+  show(hero,
     el('div', {class:'stats'},
-      el('div', {class:'card'}, el('b', {}, String(done.size) + '/' + PRACTICES.length), 'практик'),
-      el('div', {class:'card'}, el('b', {}, String(streak())), 'дней подряд'),
-      el('div', {class:'card'}, el('b', {}, String(state.quiz.best) + '/' + QUIZ.length), 'лучший тест')),
-    el('div', {class:'bar'}, el('i', {style:'width:'+pct+'%'})),
-    el('h2', {style:'font-size:1.1rem;margin:24px 0 0'}, 'Практика дня'),
-    practiceCard(pick),
-    el('p', {class:'muted'}, 'Одна небольшая практика в день работает лучше, чем марафон раз в месяц.'));
+      el('div', {}, el('b', {}, done.size + '/' + PRACTICES.length), el('span', {}, 'практик выполнено')),
+      el('div', {}, el('b', {}, String(streak())), el('span', {}, 'дней подряд')),
+      el('div', {}, el('b', {}, state.quiz.best + '/' + QUIZ.length), el('span', {}, 'лучший результат теста'))),
+    el('h2', {class:'sect'}, 'Карта этапов'), map,
+    el('h2', {class:'sect'}, 'Практика дня'), el('div', {class:'stack'}, practiceCard(pick)));
+  drawWaves(canvas);
+}
+
+function modHead(m){
+  return el('div', {class:'mod-head'}, icon(m.id, 72), el('div', {}, el('h2', {}, plain(m.title)), el('p', {}, m.idea)));
 }
 
 function viewPractices(){
-  const nodes = MODULES.map(m => el('section', {class:'mod'},
-    el('h2', {}, m.title), el('p', {class:'idea'}, m.idea),
-    PRACTICES.filter(p => p.mod === m.id).map(practiceCard)));
-  show(...nodes);
+  show(...MODULES.map(m => el('section', {class:'mod', style:'--sc:' + stageColor(m.id)},
+    modHead(m), el('div', {class:'stack'}, PRACTICES.filter(p => p.mod === m.id).map(practiceCard)))));
 }
 
 function openPractice(id){
-  const p = PRACTICES.find(x => x.id === id);
+  const p = PRACTICES.find(x => x.id === id), m = MODULES.find(x => x.id === p.mod);
   clearInterval(timerId);
-  let left = p.min * 60, running = false;
-  const fmt = s => String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
-  const display = el('div', {class:'timer'}, fmt(left));
-  const startBtn = el('button', {class:'primary', onclick: toggle}, 'Старт');
-  function toggle(){
-    if(running){ clearInterval(timerId); running = false; startBtn.textContent = 'Продолжить'; return; }
-    running = true; startBtn.textContent = 'Пауза';
-    timerId = setInterval(() => {
-      left--; display.textContent = fmt(Math.max(left,0));
-      if(left <= 0){ clearInterval(timerId); running = false; startBtn.textContent = 'Готово'; startBtn.disabled = true; display.textContent = '00:00'; }
-    }, 1000);
-  }
-  const area = el('textarea', {placeholder:'Пишите здесь…'});
+  const area = el('textarea', {id:'ans', placeholder:'Пишите здесь…'});
   const finish = el('button', {class:'primary', onclick: () => {
-    const text = area.value.trim();
-    if(!text){ area.focus(); return; }
+    const text = area.value.trim(); if(!text){ area.focus(); return; }
     state.entries.unshift({practice:p.id, title:p.title, text, date:new Date().toISOString()});
     save(); go('journal');
   }}, 'Сохранить в дневник');
   show(
     el('button', {class:'ghost', onclick: () => go('practices')}, '← Назад'),
-    el('div', {class:'card'},
-      el('h3', {}, p.title), el('p', {class:'muted'}, p.desc),
-      el('ol', {class:'steps'}, p.steps.map(s => el('li', {}, s)))),
-    el('div', {class:'card'}, el('div', {class:'row'}, display, startBtn)),
-    el('div', {class:'card'}, el('p', {}, p.prompt), area, el('p', {}, finish)));
+    el('div', {class:'detail-head'}, icon(p.mod, 72), el('div', {}, el('p', {class:'eyebrow'}, plain(m.title) + ' · ' + p.min + ' мин'), el('h2', {}, p.title))),
+    el('div', {class:'stack'},
+      el('div', {class:'card'}, el('p', {class:'muted', style:'margin:0'}, p.desc), el('ol', {class:'steps'}, p.steps.map(s => el('li', {}, s)))),
+      makeTimer(p.min),
+      el('div', {class:'card'}, el('p', {style:'margin-top:0'}, p.prompt), area, el('p', {style:'margin-bottom:0'}, finish))));
 }
-
 
 function viewProject(){
   const pr = state.project;
   if(!pr){
-    const input = el('input', {type:'text', placeholder:'Например: рассказ про деда', style:'width:100%;font:inherit;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)'});
-    show(el('div', {class:'card'}, el('h3', {}, 'Сквозной проект'),
-      el('p', {class:'muted'}, 'Возьмите одну свою работу и проведите её через все пять этапов: от наблюдений до показа. Каждый шаг будет опираться на то, что вы написали раньше.'),
-      input, el('p', {}, el('button', {class:'primary', onclick: () => {
-        const name = input.value.trim(); if(!name){ input.focus(); return; }
-        state.project = {name, steps:{}}; save(); viewProject();
-      }}, 'Начать проект'))));
+    const input = el('input', {type:'text', id:'pname', placeholder:'Например: рассказ про деда'});
+    show(el('section', {class:'hero', style:'grid-template-columns:minmax(0,1fr)'},
+      el('div', {}, el('p', {class:'eyebrow'}, 'Сквозной проект'),
+        el('h1', {}, 'Одна работа, пять этапов'),
+        el('p', {class:'lead'}, 'Возьмите свою работу и проведите её от наблюдений до показа. Каждый шаг опирается на то, что вы написали раньше.'),
+        el('div', {class:'row'}, input, el('button', {class:'primary', onclick: () => {
+          const name = input.value.trim(); if(!name){ input.focus(); return; }
+          state.project = {name, steps:{}}; save(); viewProject();
+        }}, 'Начать проект')))));
     return;
   }
   const done = PROJECT_STEPS.filter(st => pr.steps[st.id]).length;
   const next = PROJECT_STEPS.find(st => !pr.steps[st.id]);
+  const path = el('div', {class:'path'}, MODULES.map(m => {
+    const sts = PROJECT_STEPS.filter(s => s.mod === m.id);
+    return el('i', {class: sts.every(s => pr.steps[s.id]) ? 'on' : '', style:'--sc:' + stageColor(m.id)});
+  }));
   const nodes = [
-    el('div', {class:'row'}, el('h2', {style:'font-size:1.2rem;margin:0'}, pr.name),
-      el('span', {class:'pill'}, done + '/' + PROJECT_STEPS.length)),
-    el('div', {class:'bar'}, el('i', {style:'width:'+Math.round(done/PROJECT_STEPS.length*100)+'%'}))];
-  MODULES.forEach(m => {
-    nodes.push(el('section', {class:'mod'}, el('h2', {}, m.title),
-      PROJECT_STEPS.filter(st => st.mod === m.id).map(st => {
-        const d = pr.steps[st.id], open = d || st === next;
-        return el('div', {class:'card' + (open ? ' item' : ''), style: open ? '' : 'opacity:.5',
-            onclick: open ? () => openProjectStep(st.id) : null},
-          el('div', {class:'row'}, el('h3', {}, st.title),
-            d ? el('span', {class:'pill done'}, 'выполнено') : (st === next ? el('span', {class:'pill'}, 'следующий') : el('span', {class:'pill'}, 'закрыто'))),
-          el('p', {class:'muted'}, st.text));
-      })));
-  });
-  nodes.push(el('p', {}, el('button', {class:'ghost', onclick: () => {
-    if(confirm('Сбросить проект и все его шаги?')){ state.project = null; save(); viewProject(); }
-  }}, 'Начать заново')));
+    el('div', {style:'padding-top:36px'}, el('p', {class:'eyebrow'}, 'Проект · ' + done + ' из ' + PROJECT_STEPS.length + ' шагов'),
+      el('h1', {style:'font-size:clamp(2.2rem,6vw,3.4rem);line-height:1.05;margin-top:8px'}, pr.name), path)];
+  MODULES.forEach(m => nodes.push(el('section', {class:'mod', style:'--sc:' + stageColor(m.id)}, modHead(m),
+    el('div', {class:'stack'}, PROJECT_STEPS.filter(st => st.mod === m.id).map(st => {
+      const d = pr.steps[st.id], open = d || st === next;
+      return el('div', {class:'card item' + (open ? '' : ' locked'), tabindex: open ? '0' : null, onclick: open ? () => openProjectStep(st.id) : null},
+        el('div', {class:'body'},
+          el('div', {class:'row'}, el('h3', {}, st.title), el('span', {class:'pill'}, st.min + ' мин'),
+            d ? el('span', {class:'pill done'}, 'выполнено') : (st === next ? el('span', {class:'pill now'}, 'следующий') : el('span', {class:'pill'}, 'закрыто'))),
+          el('p', {}, st.text)));
+    })))));
+  nodes.push(el('p', {style:'margin-top:40px'}, armBtn('Начать заново', 'Точно сбросить?', () => { state.project = null; save(); viewProject(); })));
   show(...nodes);
 }
 
 function openProjectStep(id){
-  const st = PROJECT_STEPS.find(x => x.id === id), pr = state.project;
-  const prev = pr.steps[id];
+  const st = PROJECT_STEPS.find(x => x.id === id), pr = state.project, m = MODULES.find(x => x.id === st.mod);
   clearInterval(timerId);
-  let left = st.min * 60, running = false;
-  const fmt = n => String(Math.floor(n/60)).padStart(2,'0') + ':' + String(n%60).padStart(2,'0');
-  const display = el('div', {class:'timer'}, fmt(left));
-  const startBtn = el('button', {class:'primary', onclick: toggle}, 'Старт');
-  function toggle(){
-    if(running){ clearInterval(timerId); running = false; startBtn.textContent = 'Продолжить'; return; }
-    running = true; startBtn.textContent = 'Пауза';
-    timerId = setInterval(() => {
-      left--; display.textContent = fmt(Math.max(left,0));
-      if(left <= 0){ clearInterval(timerId); running = false; startBtn.textContent = 'Готово'; startBtn.disabled = true; display.textContent = '00:00'; }
-    }, 1000);
-  }
-  const area = el('textarea', {placeholder:'Пишите здесь…'}); area.value = prev ? prev.text : '';
+  const area = el('textarea', {id:'pans', placeholder:'Пишите здесь…'}); area.value = pr.steps[id] ? pr.steps[id].text : '';
   const ctx = st.ctx.filter(c => pr.steps[c]).map(c => {
     const src = PROJECT_STEPS.find(x => x.id === c);
-    return el('div', {class:'card entry'}, el('p', {class:'muted'}, 'Из шага «' + src.title + '»'),
-      el('blockquote', {}, pr.steps[c].text));
+    return el('div', {class:'card entry'}, el('p', {class:'eyebrow'}, 'Из шага «' + src.title + '»'), el('blockquote', {}, pr.steps[c].text));
   });
-  const save_ = el('button', {class:'primary', onclick: () => {
+  const saveBtn = el('button', {class:'primary', onclick: () => {
     const text = area.value.trim(); if(!text){ area.focus(); return; }
     pr.steps[id] = {text, date:new Date().toISOString()}; save(); go('project');
   }}, 'Сохранить шаг');
   show(
     el('button', {class:'ghost', onclick: () => go('project')}, '← К проекту'),
-    el('div', {class:'card'}, el('h3', {}, st.title), el('p', {}, st.text)),
-    ...ctx,
-    el('div', {class:'card'}, el('div', {class:'row'}, display, startBtn)),
-    el('div', {class:'card'}, el('p', {}, st.prompt), area, el('p', {}, save_)));
+    el('div', {class:'detail-head'}, icon(st.mod, 72), el('div', {}, el('p', {class:'eyebrow'}, pr.name + ' · ' + plain(m.title)), el('h2', {}, st.title))),
+    el('div', {class:'stack'},
+      el('div', {class:'card'}, el('p', {style:'margin:0'}, st.text)),
+      ...ctx, makeTimer(st.min),
+      el('div', {class:'card'}, el('p', {style:'margin-top:0'}, st.prompt), area, el('p', {style:'margin-bottom:0'}, saveBtn))));
 }
 
 function viewQuiz(){
@@ -362,41 +455,51 @@ function viewQuiz(){
   function render(){
     if(i >= QUIZ.length){
       state.quiz.last = score; state.quiz.best = Math.max(state.quiz.best, score); save();
-      show(el('div', {class:'card'}, el('h3', {}, 'Результат: ' + score + ' из ' + QUIZ.length),
-        el('p', {class:'muted'}, score >= 6 ? 'Хорошее понимание идей. Закрепите практикой.' : 'Загляните в практики: идеи лучше усваиваются руками.'),
-        el('button', {class:'primary', onclick: viewQuiz}, 'Пройти ещё раз')));
+      show(el('section', {class:'hero', style:'grid-template-columns:minmax(0,1fr)'}, el('div', {},
+        el('p', {class:'eyebrow'}, 'Результат'), el('h1', {}, score + ' из ' + QUIZ.length),
+        el('p', {class:'lead'}, score >= 6 ? 'Хорошее понимание идей. Закрепите его практикой.' : 'Загляните в практики: эти идеи лучше усваиваются руками.'),
+        el('button', {class:'primary', onclick: viewQuiz}, 'Пройти ещё раз'))));
       return;
     }
     const q = QUIZ[i];
-    const box = el('div', {class:'card'}, el('p', {class:'muted'}, 'Вопрос ' + (i+1) + ' из ' + QUIZ.length), el('h3', {}, q.q));
     const note = el('p', {class:'muted'});
-    const next = el('button', {class:'primary', style:'display:none', onclick: () => { i++; render(); }}, i === QUIZ.length-1 ? 'Результат' : 'Дальше');
+    const next = el('button', {class:'primary', hidden:'', onclick: () => { i++; render(); }}, i === QUIZ.length-1 ? 'Результат' : 'Дальше');
     const btns = q.o.map((t, k) => el('button', {class:'opt', onclick: () => {
       btns.forEach((b, j) => { b.disabled = true; if(j === q.a) b.classList.add('right'); });
       if(k === q.a) score++; else btns[k].classList.add('wrong');
-      note.textContent = q.e; next.style.display = '';
+      note.textContent = q.e; next.hidden = false;
     }}, t));
-    box.append(...btns, note, next);
-    show(box);
+    show(el('div', {style:'padding-top:36px'}, el('p', {class:'eyebrow'}, 'Вопрос ' + (i+1) + ' из ' + QUIZ.length),
+      el('h1', {style:'font-size:clamp(1.8rem,5vw,2.6rem);line-height:1.1;margin:8px 0 16px'}, q.q), ...btns, note, next));
   }
   render();
 }
 
 function viewJournal(){
   if(!state.entries.length){
-    show(el('div', {class:'card'}, el('p', {}, 'Дневник пока пуст. Выполните первую практику.'),
-      el('button', {class:'primary', onclick: () => go('practices')}, 'К практикам')));
+    show(el('section', {class:'hero', style:'grid-template-columns:minmax(0,1fr)'}, el('div', {},
+      el('p', {class:'eyebrow'}, 'Дневник'), el('h1', {}, 'Пока пусто'),
+      el('p', {class:'lead'}, 'Здесь появятся ответы из ваших практик. Начните с любой.'),
+      el('button', {class:'primary', onclick: () => go('practices')}, 'К практикам'))));
     return;
   }
   const exp = el('button', {class:'ghost', onclick: () => {
-    const blob = new Blob([JSON.stringify(state.entries, null, 2)], {type:'application/json'});
-    const a = el('a', {href: URL.createObjectURL(blob), download:'journal.json'});
-    a.click(); URL.revokeObjectURL(a.href);
-  }}, 'Экспорт JSON');
-  show(el('p', {}, exp), ...state.entries.map((e, idx) => el('div', {class:'card entry'},
-    el('div', {class:'row'}, el('h3', {}, e.title), el('span', {class:'pill'}, new Date(e.date).toLocaleDateString('ru-RU')),
-      el('button', {class:'ghost', onclick: () => { if(confirm('Удалить запись?')){ state.entries.splice(idx,1); save(); viewJournal(); } }}, 'Удалить')),
-    el('blockquote', {}, e.text))));
+    const json = JSON.stringify(state.entries, null, 2);
+    const ok = () => { exp.textContent = 'Скопировано'; setTimeout(() => exp.textContent = 'Копировать как JSON', 2000); };
+    (navigator.clipboard ? navigator.clipboard.writeText(json) : Promise.reject()).then(ok).catch(() => {
+      const ta = el('textarea', {id:'export'}); ta.value = json; exp.replaceWith(ta); ta.select();
+    });
+  }}, 'Копировать как JSON');
+  show(el('div', {style:'padding-top:36px'}, el('h1', {style:'font-size:clamp(2.2rem,6vw,3.4rem)'}, 'Дневник'), el('p', {style:'margin:12px 0 0'}, exp)),
+    el('div', {class:'stack'}, state.entries.map((e, idx) => {
+      const pr = PRACTICES.find(p => p.id === e.practice);
+      return el('div', {class:'card entry'},
+        el('div', {class:'row', style:'justify-content:space-between'},
+          el('div', {class:'row'}, pr ? icon(pr.mod, 36) : null, el('h3', {style:'font-size:1.3rem'}, e.title)),
+          el('div', {class:'row'}, el('span', {class:'pill'}, new Date(e.date).toLocaleDateString('ru-RU')),
+            armBtn('Удалить', 'Точно удалить?', () => { state.entries.splice(idx,1); save(); viewJournal(); }))),
+        el('blockquote', {}, e.text));
+    })));
 }
 
 go('today');
