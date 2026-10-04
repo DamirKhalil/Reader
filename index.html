@@ -126,6 +126,41 @@ const PRACTICES = [
    prompt:'Кому, когда и чего вы боитесь.'}
 ];
 
+
+// Сквозной проект: один замысел проходит все этапы, каждый шаг опирается на предыдущие
+const PROJECT_STEPS = [
+  {id:'p1', mod:'attention', title:'Чем вы заняты', min:3, ctx:[],
+   text:'Выберите, над чем будете работать: рассказ, песня, дизайн, проект, речь. Это может быть что угодно. Напишите одной строкой, что это.',
+   prompt:'Рабочее название и форма работы.'},
+  {id:'p2', mod:'attention', title:'Наблюдения', min:5, ctx:['p1'],
+   text:'Посидите с темой в тишине. Не придумывайте, только замечайте: образы, фразы, ощущения, воспоминания, связанные с ней.',
+   prompt:'Минимум 10 наблюдений.'},
+  {id:'p3', mod:'seed', title:'Семена', min:5, ctx:['p2'],
+   text:'Опираясь на наблюдения, запишите как можно больше направлений, в которые работа могла бы пойти. Не оценивайте.',
+   prompt:'10 и больше вариантов.'},
+  {id:'p4', mod:'seed', title:'Выбор семени', min:5, ctx:['p3'],
+   text:'Не выбирайте самое разумное. Выберите то, что тянет сильнее остальных, даже если не можете объяснить почему.',
+   prompt:'Выбранное семя и что вас в нём притягивает.'},
+  {id:'p5', mod:'experiment', title:'Грубая версия', min:10, ctx:['p4'],
+   text:'Сделайте самую быструю и неряшливую версию. Её цель — существовать. Исправлять будете позже.',
+   prompt:'Вставьте черновик или опишите, что вы сделали.'},
+  {id:'p6', mod:'experiment', title:'Эксперимент', min:10, ctx:['p5'],
+   text:'Возьмите черновик и сделайте с ним что-то неожиданное: поменяйте форму, наложите жёсткое ограничение или переверните идею наоборот.',
+   prompt:'Что вы изменили и что в новой версии оказалось живее?'},
+  {id:'p7', mod:'craft', title:'Центр работы', min:5, ctx:['p4','p6'],
+   text:'Найдите вопрос или чувство, вокруг которого всё держится. Проверьте, что служит этому центру, а что отвлекает.',
+   prompt:'Центральный вопрос и список лишнего.'},
+  {id:'p8', mod:'craft', title:'Сокращение', min:10, ctx:['p7'],
+   text:'Уберите лишнее, найденное на предыдущем шаге. Если сомневаетесь, убирайте больше. Работа должна стать яснее.',
+   prompt:'Новая версия работы и что вы убрали.'},
+  {id:'p9', mod:'completion', title:'Критерий «достаточно»', min:5, ctx:['p7','p8'],
+   text:'Определите три признака того, что работа готова, и проверьте по ним текущую версию.',
+   prompt:'Три признака и результат проверки.'},
+  {id:'p10', mod:'completion', title:'Отпустить', min:5, ctx:['p1','p9'],
+   text:'Назначьте, кому и когда вы покажете работу. Напишите, чего вы боитесь и что получите, если покажете.',
+   prompt:'Кому, когда, страхи и ожидания.'}
+];
+
 const QUIZ = [
   {q:'Вы застряли и не можете начать. Что ближе всего к подходу книги?', o:['Дождаться вдохновения','Снизить ставки: сделать грубый набросок и посмотреть, что получится','Сначала прочитать ещё три книги'], a:1, e:'Эксперимент и маленькие шаги снимают давление. Первая версия не обязана быть хорошей.'},
   {q:'Что делать с «плохими» идеями на стадии семян?', o:['Сразу отбрасывать','Собирать без оценки: судить рано','Показывать всем для обратной связи'], a:1, e:'На ранней стадии критик мешает. Отбор лучше отложить на потом.'},
@@ -141,15 +176,17 @@ const QUIZ = [
 const KEY = 'creative-trainer-v1';
 function load(){
   try{ const d = JSON.parse(localStorage.getItem(KEY)); if(d && d.entries) return d; }catch(e){}
-  return {entries:[], quiz:{best:0, last:0}};
+  return {entries:[], quiz:{best:0, last:0}, project:null};
 }
 let state = load();
+if(!state.project) state.project = null;
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
 
 const doneIds = () => new Set(state.entries.map(e => e.practice));
 const dayKey = d => d.toISOString().slice(0,10);
 function streak(){
-  const days = new Set(state.entries.map(e => e.date.slice(0,10)));
+  const pSteps = state.project ? Object.values(state.project.steps) : [];
+  const days = new Set([...state.entries, ...pSteps].map(e => e.date.slice(0,10)));
   let n = 0, d = new Date();
   if(!days.has(dayKey(d))) d.setDate(d.getDate()-1);
   while(days.has(dayKey(d))){ n++; d.setDate(d.getDate()-1); }
@@ -171,7 +208,7 @@ const view = document.getElementById('view');
 function show(...nodes){ view.replaceChildren(...nodes); window.scrollTo(0,0); }
 
 // ---------- Навигация ----------
-const TABS = [['today','Сегодня'],['practices','Практики'],['quiz','Тест'],['journal','Дневник']];
+const TABS = [['today','Сегодня'],['project','Проект'],['practices','Практики'],['quiz','Тест'],['journal','Дневник']];
 let currentTab = 'today', timerId = null;
 function renderNav(){
   const nav = document.getElementById('nav');
@@ -181,7 +218,7 @@ function renderNav(){
 function go(tab){
   clearInterval(timerId);
   currentTab = tab; renderNav();
-  ({today:viewToday, practices:viewPractices, quiz:viewQuiz, journal:viewJournal})[tab]();
+  ({today:viewToday, project:viewProject, practices:viewPractices, quiz:viewQuiz, journal:viewJournal})[tab]();
 }
 
 // ---------- Экраны ----------
@@ -248,6 +285,76 @@ function openPractice(id){
       el('ol', {class:'steps'}, p.steps.map(s => el('li', {}, s)))),
     el('div', {class:'card'}, el('div', {class:'row'}, display, startBtn)),
     el('div', {class:'card'}, el('p', {}, p.prompt), area, el('p', {}, finish)));
+}
+
+
+function viewProject(){
+  const pr = state.project;
+  if(!pr){
+    const input = el('input', {type:'text', placeholder:'Например: рассказ про деда', style:'width:100%;font:inherit;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)'});
+    show(el('div', {class:'card'}, el('h3', {}, 'Сквозной проект'),
+      el('p', {class:'muted'}, 'Возьмите одну свою работу и проведите её через все пять этапов: от наблюдений до показа. Каждый шаг будет опираться на то, что вы написали раньше.'),
+      input, el('p', {}, el('button', {class:'primary', onclick: () => {
+        const name = input.value.trim(); if(!name){ input.focus(); return; }
+        state.project = {name, steps:{}}; save(); viewProject();
+      }}, 'Начать проект'))));
+    return;
+  }
+  const done = PROJECT_STEPS.filter(st => pr.steps[st.id]).length;
+  const next = PROJECT_STEPS.find(st => !pr.steps[st.id]);
+  const nodes = [
+    el('div', {class:'row'}, el('h2', {style:'font-size:1.2rem;margin:0'}, pr.name),
+      el('span', {class:'pill'}, done + '/' + PROJECT_STEPS.length)),
+    el('div', {class:'bar'}, el('i', {style:'width:'+Math.round(done/PROJECT_STEPS.length*100)+'%'}))];
+  MODULES.forEach(m => {
+    nodes.push(el('section', {class:'mod'}, el('h2', {}, m.title),
+      PROJECT_STEPS.filter(st => st.mod === m.id).map(st => {
+        const d = pr.steps[st.id], open = d || st === next;
+        return el('div', {class:'card' + (open ? ' item' : ''), style: open ? '' : 'opacity:.5',
+            onclick: open ? () => openProjectStep(st.id) : null},
+          el('div', {class:'row'}, el('h3', {}, st.title),
+            d ? el('span', {class:'pill done'}, 'выполнено') : (st === next ? el('span', {class:'pill'}, 'следующий') : el('span', {class:'pill'}, 'закрыто'))),
+          el('p', {class:'muted'}, st.text));
+      })));
+  });
+  nodes.push(el('p', {}, el('button', {class:'ghost', onclick: () => {
+    if(confirm('Сбросить проект и все его шаги?')){ state.project = null; save(); viewProject(); }
+  }}, 'Начать заново')));
+  show(...nodes);
+}
+
+function openProjectStep(id){
+  const st = PROJECT_STEPS.find(x => x.id === id), pr = state.project;
+  const prev = pr.steps[id];
+  clearInterval(timerId);
+  let left = st.min * 60, running = false;
+  const fmt = n => String(Math.floor(n/60)).padStart(2,'0') + ':' + String(n%60).padStart(2,'0');
+  const display = el('div', {class:'timer'}, fmt(left));
+  const startBtn = el('button', {class:'primary', onclick: toggle}, 'Старт');
+  function toggle(){
+    if(running){ clearInterval(timerId); running = false; startBtn.textContent = 'Продолжить'; return; }
+    running = true; startBtn.textContent = 'Пауза';
+    timerId = setInterval(() => {
+      left--; display.textContent = fmt(Math.max(left,0));
+      if(left <= 0){ clearInterval(timerId); running = false; startBtn.textContent = 'Готово'; startBtn.disabled = true; display.textContent = '00:00'; }
+    }, 1000);
+  }
+  const area = el('textarea', {placeholder:'Пишите здесь…'}); area.value = prev ? prev.text : '';
+  const ctx = st.ctx.filter(c => pr.steps[c]).map(c => {
+    const src = PROJECT_STEPS.find(x => x.id === c);
+    return el('div', {class:'card entry'}, el('p', {class:'muted'}, 'Из шага «' + src.title + '»'),
+      el('blockquote', {}, pr.steps[c].text));
+  });
+  const save_ = el('button', {class:'primary', onclick: () => {
+    const text = area.value.trim(); if(!text){ area.focus(); return; }
+    pr.steps[id] = {text, date:new Date().toISOString()}; save(); go('project');
+  }}, 'Сохранить шаг');
+  show(
+    el('button', {class:'ghost', onclick: () => go('project')}, '← К проекту'),
+    el('div', {class:'card'}, el('h3', {}, st.title), el('p', {}, st.text)),
+    ...ctx,
+    el('div', {class:'card'}, el('div', {class:'row'}, display, startBtn)),
+    el('div', {class:'card'}, el('p', {}, st.prompt), area, el('p', {}, save_)));
 }
 
 function viewQuiz(){
