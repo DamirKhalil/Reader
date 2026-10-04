@@ -53,7 +53,7 @@ p{margin:0 0 14px}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--sc,var(--ink));flex:none}
 .dot.empty{background:none;box-shadow:inset 0 0 0 1px var(--faint)}
 .dot.next{box-shadow:0 0 0 3px color-mix(in srgb,var(--sc) 25%,transparent)}
-.field{width:100%;height:clamp(280px,50vh,440px);display:block;cursor:crosshair;margin:4px 0 0}
+.field{width:100%;height:clamp(240px,42vh,380px);display:block;cursor:crosshair;margin:4px 0 0}
 .caption{min-height:1.6em;color:var(--soft)}
 .block{margin-top:44px}
 .rows{list-style:none;margin:14px 0 0;padding:0;border-top:1px solid var(--hair)}
@@ -82,8 +82,8 @@ p{margin:0 0 14px}
 .timeline{height:1px;background:var(--hair);margin:4px 0 0;overflow:hidden}
 .timeline i{display:block;height:100%;width:100%;background:var(--sc);transition:width 1s linear}
 .prompt{font:400 1.08rem/1.5 var(--text);color:var(--soft);margin:20px 0 0}
-textarea.page{display:block;width:100%;min-height:40vh;border:0;background:transparent;color:var(--ink);caret-color:var(--amber);font:400 1.12rem/1.8 var(--text);resize:vertical;padding:10px 0;margin:0}
-textarea.page:focus{outline:none}
+textarea.page{display:block;width:100%;min-height:36vh;border:1px solid var(--hair);border-radius:6px;background:var(--panel);color:var(--ink);caret-color:var(--amber);font:400 1.12rem/1.8 var(--text);resize:vertical;padding:16px 18px;margin:12px 0 0}
+textarea.page:focus{outline:none;border-color:color-mix(in srgb,var(--amber) 45%,var(--hair))}
 textarea.line{min-height:8em}
 input.line{width:100%;caret-color:var(--amber);font:500 clamp(1.5rem,4vw,2rem)/1.3 var(--display);letter-spacing:-.02em;background:transparent;color:var(--ink);border:0;border-bottom:1px solid var(--faint);padding:8px 0;margin:8px 0 24px}
 input.line:focus{outline:none;border-bottom-color:var(--amber)}
@@ -99,7 +99,7 @@ details.orig summary{cursor:pointer;color:var(--faint)}
 details.orig div{white-space:pre-wrap;color:var(--faint);font-size:.95rem;margin-top:8px;overflow-wrap:anywhere}
 .actions{display:flex;gap:22px;align-items:center;flex-wrap:wrap;margin-top:20px;padding-top:18px;border-top:1px solid var(--hair)}
 .oracle{font:400 1.3rem/1.45 var(--display);letter-spacing:-.01em;color:var(--amber);margin:24px 0 0;max-width:34ch}
-.release{font:400 1.12rem/1.8 var(--text);white-space:pre-wrap;padding:10px 0;min-height:40vh;overflow-wrap:anywhere}
+.release{font:400 1.12rem/1.8 var(--text);white-space:pre-wrap;padding:16px 18px;margin-top:12px;min-height:40vh;overflow-wrap:anywhere}
 .release span{display:inline-block;white-space:pre;transition:transform 2.6s cubic-bezier(.2,.6,.3,1),opacity 2.6s ease-out}
 .path{display:flex;gap:9px;align-items:center;margin:4px 0 0;flex-wrap:wrap}
 .path .dot{width:10px;height:10px}
@@ -117,6 +117,16 @@ footer{margin-top:88px;color:var(--faint);font-size:.82rem;max-width:58ch}
 .rec{display:inline-flex;align-items:center;gap:8px;color:var(--ink)}
 .rec::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--rec);box-shadow:0 0 10px var(--rec);animation:rec 1.6s ease-in-out infinite}
 @keyframes rec{50%{opacity:.35}}
+.sec{margin-top:44px}
+.sec>.label{margin-bottom:10px}
+.timer-digits{font:500 2.2rem/1 var(--mono);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.rows .tw{flex:1;min-width:0}
+.rows .tw .t{display:block}
+.rows .d{display:block;font-size:.9rem;line-height:1.5;color:var(--soft);margin-top:3px}
+.rows .num{font:400 .74rem var(--mono);color:var(--faint);min-width:1.4em}
+.rows .m.next{color:var(--amber)}
+.crumbs{display:flex;gap:10px 18px;align-items:baseline;flex-wrap:wrap}
+.pager{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:56px;padding-top:18px;border-top:1px solid var(--hair)}
 @media (prefers-reduced-motion:reduce){.rec::before{animation:none}*{transition:none!important}}
 </style>
 </head>
@@ -439,29 +449,42 @@ function viewHome(){
   const prDone = pr ? PROJECT_STEPS.filter(s => pr.steps[s.id]).length : 0;
   show(
     el('p', {class:'label'}, 'Тренажёр по книге «Из ничего»'),
-    el('h1', {}, n ? 'Ваше поле' : 'Всё начинается с пустого места'),
-    el('p', {class:'soft'}, n
-      ? n + ' ' + plural(n,'семя','семени','семян') + '. Каждая практика добавляет ещё одно. Поле растёт так же, как работа: медленно и из того, что вы заметили.'
-      : 'Здесь пока ничего нет, и это правильное начало. Каждая практика оставит здесь семя. Со временем из них вырастет поле.'),
-    canvas, caption,
+    el('h1', {}, 'Из ничего'),
+    el('p', {class:'soft'}, 'Пять этапов творческого процесса: внимание, семя, эксперимент, ремесло, завершение. Делайте по одной короткой практике в день или проведите через все этапы одну свою работу в проекте.'),
     el('div', {class:'block', style:'--sc:' + stageColor(pick.mod)},
-      el('p', {class:'label'}, 'Сегодня'),
+      el('p', {class:'label'}, 'Практика на сегодня'),
       el('h2', {style:'margin-top:8px'}, pick.title),
       el('p', {class:'soft', style:'margin-top:8px'}, pick.desc),
-      el('div', {class:'row'}, el('button', {class:'go', type:'button', onclick: () => openSession(pick.id)}, 'Войти'),
+      el('div', {class:'row'}, el('button', {class:'go', type:'button', onclick: () => openSession(pick.id)}, 'Начать'),
         el('span', {class:'mono faint'}, plain(pm.title) + ' · ' + pick.min + ' мин'))),
     el('div', {class:'block'},
       el('p', {class:'label'}, 'Проект'),
       pr ? el('p', {style:'margin-top:8px'}, el('span', {style:'font:500 1.2rem var(--display)'}, pr.name), el('br'),
             el('span', {class:'soft'}, prNext ? 'Шаг ' + (prDone+1) + ' из ' + PROJECT_STEPS.length + ': ' + prNext.title + '. ' : 'Работа прошла весь путь. '),
             el('button', {class:'link', type:'button', onclick: () => prNext ? openSession(prNext.id) : go('project')}, prNext ? 'Продолжить' : 'Посмотреть'))
-         : el('p', {class:'soft', style:'margin-top:8px'}, 'Проведите одну свою работу через все пять этапов. ',
+         : el('p', {class:'soft', style:'margin-top:8px'}, 'Проведите одну свою работу через все пять этапов за десять шагов. ',
             el('button', {class:'link', type:'button', onclick: () => go('project')}, 'Начать проект'))),
-    el('p', {class:'mono faint', style:'margin-top:44px'},
+    el('div', {class:'block'},
+      el('p', {class:'label'}, 'Этапы'),
+      el('ul', {class:'rows'}, MODULES.map((m, i) => {
+        const all = PRACTICES.filter(p => p.mod === m.id), k = all.filter(p => done.has(p.id)).length;
+        return el('li', {style:'--sc:' + stageColor(m.id)}, el('button', {type:'button', onclick: () => {
+            go('practices'); const t = document.getElementById('st-' + m.id); if(t) t.scrollIntoView();
+          }},
+          el('span', {class:'num'}, String(i+1)), mark(m.id, 22, k > 0),
+          el('span', {class:'tw'}, el('span', {class:'t'}, plain(m.title)), el('span', {class:'d'}, m.idea)),
+          el('span', {class:'m'}, k + ' / ' + all.length)));
+      }))),
+    el('div', {class:'block'},
+      el('p', {class:'label'}, 'Ваше поле'),
+      el('p', {class:'soft', style:'margin-top:8px'}, n
+        ? n + ' ' + plural(n,'семя','семени','семян') + ': по одному за каждую сохранённую практику и шаг проекта.'
+        : 'Пока здесь пусто. Каждая сохранённая практика оставит здесь семя, и из ничего постепенно вырастет поле.'),
+      canvas, caption),
+    el('p', {class:'mono faint', style:'margin-top:32px'},
       doneCount + ' из ' + PRACTICES.length + ' практик · серия ' + streak() + ' ' + plural(streak(),'день','дня','дней') + ' · вопросы ' + state.quiz.best + '/' + QUIZ.length));
   drawField(canvas, caption);
 }
-
 function stageHead(m){
   const lit = touched(m.id);
   return el('div', {class:'stage-head'}, mark(m.id, 40, lit),
@@ -469,22 +492,29 @@ function stageHead(m){
 }
 
 function viewPractices(){
-  const done = doneIds();
+  const done = doneIds(), rec = PRACTICES.find(p => !done.has(p.id));
   show(
     el('p', {class:'label'}, 'Практики'),
     el('h1', {}, 'Пять этапов'),
-    el('p', {class:'soft'}, 'Порядок подсказывает путь, но не обязывает. Начните там, куда тянет.'),
-    ...MODULES.map(m => el('section', {class:'stage', style:'--sc:' + stageColor(m.id)}, stageHead(m),
+    el('p', {class:'soft'}, 'Этапы идут в том порядке, в каком обычно рождается работа. Открыть можно любую практику; рекомендуемая следующая отмечена словом «дальше».'),
+    ...MODULES.map((m, mi) => el('section', {class:'stage', id:'st-' + m.id, style:'--sc:' + stageColor(m.id)},
+      el('p', {class:'label', style:'margin-bottom:12px'}, 'Этап ' + (mi+1) + ' из 5'),
+      stageHead(m),
       el('ul', {class:'rows'}, PRACTICES.filter(p => p.mod === m.id).map(p => {
         const d = done.has(p.id);
         return el('li', {class: d ? 'is-done' : null}, el('button', {type:'button', onclick: () => openSession(p.id)},
-          el('span', {class:'dot' + (d ? '' : ' empty')}), el('span', {class:'t'}, p.title),
-          el('span', {class:'m'}, d ? 'сделано' : p.min + ' мин')));
+          el('span', {class:'dot' + (d ? '' : ' empty')}),
+          el('span', {class:'tw'}, el('span', {class:'t'}, p.title), el('span', {class:'d'}, p.desc)),
+          el('span', {class:'m' + (p === rec ? ' next' : '')}, d ? 'сделано' : p === rec ? 'дальше' : p.min + ' мин')));
       })))));
 }
-
-// ---------- Сессия: порог → работа → сохранение ----------
 function openSession(id){
+  const item = findItem(id), isStep = PROJECT_STEPS.includes(item);
+  currentTab = isStep ? 'project' : 'practices'; renderNav();
+  work(item, isStep);
+}
+
+function breathe(id){
   const item = findItem(id), isStep = id.startsWith('p') && PROJECT_STEPS.includes(item);
   const m = MODULES.find(x => x.id === item.mod), sc = stageColor(item.mod);
   const circle = el('div', {class:'breath', 'aria-hidden':'true'});
@@ -518,22 +548,26 @@ function work(item, isStep){
   const m = MODULES.find(x => x.id === item.mod), pr = state.project;
   const prev = isStep && pr.steps[item.id];
 
-  // таймер-линия: стартует с первого слова, цифры по запросу
-  const total = item.min * 60; let left = total, started = false;
+  // время: явная кнопка, цифры на виду; если начать писать, запустится само
+  const total = item.min * 60; let left = total, running = false, everStarted = false;
   const fill = el('i');
-  const digits = el('span', {class:'mono faint', hidden:true});
-  const fmt = s => String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
-  const timeLabel = el('button', {class:'quiet', type:'button', onclick: () => { digits.hidden = !digits.hidden; }},
-    item.min + ' мин · время пойдёт с первого слова');
+  const fmt = n => String(Math.floor(n/60)).padStart(2,'0') + ':' + String(n%60).padStart(2,'0');
+  const digits = el('span', {class:'timer-digits'}, fmt(left));
+  const timeLabel = el('span', {class:'mono faint'}, 'не запущено');
+  const timeBtn = el('button', {class:'go', type:'button', onclick: () => running ? pauseTime() : startTime()}, 'Старт');
   function startTime(){
-    if(started) return; started = true;
-    timeLabel.textContent = 'идёт запись'; timeLabel.classList.add('rec'); digits.textContent = fmt(left);
+    if(running || !left) return; running = everStarted = true;
+    timeBtn.textContent = 'Пауза'; timeBtn.classList.replace('go', 'quiet');
+    timeLabel.textContent = 'идёт запись'; timeLabel.classList.add('rec');
     timerId = setInterval(() => {
       left = Math.max(left - 1, 0); fill.style.width = (left/total*100) + '%'; digits.textContent = fmt(left);
-      if(!left){ clearInterval(timerId); timeLabel.classList.remove('rec'); timeLabel.textContent = 'запись окончена'; say('Время вышло. Можно закончить мысль.'); }
+      if(!left){ clearInterval(timerId); running = false; timeBtn.hidden = true; timeLabel.classList.remove('rec'); timeLabel.textContent = 'время вышло'; say('Время вышло. Можно закончить мысль.'); }
     }, 1000);
   }
-
+  function pauseTime(){
+    clearInterval(timerId); running = false; timeBtn.textContent = 'Продолжить';
+    timeLabel.classList.remove('rec'); timeLabel.textContent = 'пауза';
+  }
   const ta = el('textarea', {class:'page', id:'page-' + item.id, placeholder:'Начните здесь…', 'aria-label': item.prompt});
   if(prev) ta.value = prev.text;
   const hint = el('p', {class:'hint mono'});
@@ -584,12 +618,12 @@ function work(item, isStep){
       if(!words(ta.value)){ say('Сначала нужен исходный текст.', 3000); ta.focus(); return; }
       orig = ta.value; reduceStart.remove();
       gauge.before(el('details', {class:'orig'}, el('summary', {class:'mono'}, 'Исходник · ' + words(orig) + ' ' + plural(words(orig),'слово','слова','слов')), el('div', {}, orig)));
-      drawGauge(); say('Убирайте лишнее. Цель — половина.', 4000); ta.focus(); startTime();
+      drawGauge(); say('Убирайте лишнее. Цель — половина.', 4000); ta.focus(); if(!everStarted) startTime();
     }}, 'Начать сокращение');
     extras.push(gauge);
   }
 
-  ta.addEventListener('input', () => { startTime(); drawSeeds(); drawGauge(); });
+  ta.addEventListener('input', () => { if(!everStarted) startTime(); drawSeeds(); drawGauge(); });
 
   const oracle = el('p', {class:'oracle', hidden:true});
   const stuck = el('button', {class:'quiet', type:'button', onclick: () => {
@@ -610,7 +644,7 @@ function work(item, isStep){
       state.entries.unshift({practice:item.id, title:item.title, text, date});
     }
     save(); freshAt = Date.now();
-    if(mode.release) release(); else go('home');
+    if(mode.release) release(); else doneScreen(item, isStep);
   }
   function release(){
     clearInterval(timerId);
@@ -619,7 +653,7 @@ function work(item, isStep){
     out.append(...parts);
     ta.replaceWith(out); saveBtn.disabled = true;
     say('Работа больше не только ваша.');
-    if(reduceMotion()){ setTimeout(() => go('home'), 1600); return; }
+    if(reduceMotion()){ setTimeout(() => doneScreen(item, isStep), 1600); return; }
     requestAnimationFrame(() => requestAnimationFrame(() => {
       parts.forEach((s, i) => {
         s.style.transitionDelay = Math.min(i*12, 900) + 'ms';
@@ -627,7 +661,7 @@ function work(item, isStep){
         s.style.opacity = '0';
       });
     }));
-    setTimeout(() => go('home'), 3800);
+    setTimeout(() => { if(out.isConnected) doneScreen(item, isStep); }, 3800);
   }
 
   const ctx = isStep ? item.ctx.filter(c => pr.steps[c]).map(c => {
@@ -635,25 +669,69 @@ function work(item, isStep){
     return el('div', {class:'ctx'}, el('p', {class:'label'}, 'Вы писали: ' + src.title), el('blockquote', {}, pr.steps[c].text));
   }) : [];
 
+  const list = isStep ? PROJECT_STEPS : PRACTICES;
+  const idx = list.indexOf(item), sib = list.filter(x => x.mod === item.mod);
+  const stageNo = MODULES.indexOf(m) + 1;
+  const prevItem = list[idx-1], nextItem = list[idx+1];
+  const canOpen = x => !isStep || pr.steps[x.id] || x === PROJECT_STEPS.find(s => !pr.steps[s.id]);
+  const breath = !prev ? el('button', {class:'link', type:'button', onclick: () => breathe(item.id)}, 'Сначала три вдоха, 30 секунд') : null;
+
   show(
-    el('button', {class:'quiet', type:'button', onclick: () => go(isStep ? 'project' : 'practices')}, '← ' + (isStep ? 'Проект' : 'Практики')),
+    el('div', {class:'crumbs'},
+      el('button', {class:'quiet', type:'button', onclick: () => go(isStep ? 'project' : 'practices')}, '← ' + (isStep ? 'Проект' : 'Все практики')),
+      el('span', {class:'mono faint'}, 'Этап ' + stageNo + ' из 5 · ' + plain(m.title) + ' · ' + (isStep ? 'шаг ' + (idx+1) + ' из ' + list.length : 'практика ' + (sib.indexOf(item)+1) + ' из ' + sib.length))),
     el('div', {style:'--sc:' + sc},
-      el('div', {class:'row', style:'margin-top:20px;gap:16px'}, mark(item.mod, 30, true), el('p', {class:'label'}, (isStep ? pr.name + ' · ' : '') + plain(m.title))),
+      el('div', {class:'row', style:'margin-top:24px;gap:16px'}, mark(item.mod, 30, true), el('p', {class:'label'}, (isStep ? pr.name + ' · ' : '') + item.min + ' мин')),
       el('h1', {}, item.title),
-      el('p', {class:'soft'}, isStep ? item.text : item.desc),
-      item.steps ? el('ol', {class:'steps'}, item.steps.map(s => el('li', {}, el('span', {}, s)))) : null,
-      ...ctx,
-      el('div', {class:'work'},
-        el('div', {class:'timebar'}, timeLabel, digits),
-        el('div', {class:'timeline'}, fill),
-        el('p', {class:'prompt'}, item.prompt),
+      breath ? el('p', {class:'soft'}, 'Не спешите начинать. ', breath, ' помогут переключиться.') : null,
+      el('section', {class:'sec'}, el('p', {class:'label'}, '1 · Задание'),
+        el('p', {}, isStep ? item.text : item.desc),
+        item.steps ? el('ol', {class:'steps'}, item.steps.map(x => el('li', {}, el('span', {}, x)))) : null,
+        ...ctx),
+      el('section', {class:'sec'}, el('p', {class:'label'}, '2 · Время'),
+        el('div', {class:'timebar'}, el('div', {class:'row'}, digits, timeLabel), timeBtn),
+        el('div', {class:'timeline'}, fill)),
+      el('section', {class:'sec'}, el('p', {class:'label'}, '3 · Ответ'),
+        el('p', {class:'prompt', style:'margin-top:0'}, item.prompt),
         ...extras, ta, hint,
         el('div', {class:'actions'}, reduceStart || saveBtn, reduceStart ? saveBtn : null, freeToggle, stuck),
-        oracle)));
+        oracle),
+      el('div', {class:'pager'},
+        prevItem && canOpen(prevItem) ? el('button', {class:'quiet', type:'button', onclick: () => openSession(prevItem.id)}, '← ' + prevItem.title) : el('span'),
+        nextItem && canOpen(nextItem) ? el('button', {class:'quiet', type:'button', onclick: () => openSession(nextItem.id)}, nextItem.title + ' →') : el('span'))));
   if(reduceStart) saveBtn.classList.replace('go', 'quiet');
   drawSeeds();
-  if(mode.free) say('Этап семян: стирать нельзя. Критик подождёт.', 5000);
+  if(mode.free) say('Здесь стирать нельзя: пишите всё подряд, отбор будет позже.', 6000);
   if(mode.reduce) say('Вставьте или напишите исходный текст, затем начните сокращение.');
+}
+
+function nextPractice(afterId){
+  const done = doneIds(), i = PRACTICES.findIndex(p => p.id === afterId);
+  for(let k = 1; k <= PRACTICES.length; k++){ const p = PRACTICES[(i+k) % PRACTICES.length]; if(!done.has(p.id)) return p; }
+  return null;
+}
+
+function doneScreen(item, isStep){
+  renderNav();
+  const pr = state.project;
+  const next = isStep ? PROJECT_STEPS.find(x => !pr.steps[x.id]) : nextPractice(item.id);
+  const nm = next && MODULES.find(x => x.id === next.mod);
+  const stepsDone = isStep ? PROJECT_STEPS.filter(x => pr.steps[x.id]).length : 0;
+  show(
+    el('p', {class:'label'}, 'Сохранено'),
+    el('h1', {}, isStep ? 'Шаг ' + stepsDone + ' из ' + PROJECT_STEPS.length + ' пройден' : 'Практика выполнена'),
+    el('p', {class:'soft'}, 'Ответ записан в дневник, а на вашем поле появилось новое семя.'),
+    next ? el('div', {class:'block', style:'--sc:' + stageColor(next.mod)},
+        el('p', {class:'label'}, isStep ? 'Следующий шаг проекта' : 'Следующая практика'),
+        el('h2', {style:'margin-top:8px'}, next.title),
+        el('p', {class:'soft', style:'margin-top:8px'}, isStep ? next.text : next.desc),
+        el('div', {class:'row'}, el('button', {class:'go', type:'button', onclick: () => openSession(next.id)}, isStep ? 'Перейти к шагу' : 'Начать'),
+          el('span', {class:'mono faint'}, plain(nm.title) + ' · ' + next.min + ' мин')))
+      : el('p', {class:'block'}, isStep ? 'Проект прошёл все пять этапов. Работа готова к тому, чтобы её увидели.' : 'Все практики пройдены. Повторяйте любые: они работают и во второй раз.'),
+    el('div', {class:'row', style:'margin-top:44px;gap:28px'},
+      el('button', {class:'link', type:'button', onclick: () => go(isStep ? 'project' : 'practices')}, isStep ? 'К проекту' : 'Все практики'),
+      el('button', {class:'link', type:'button', onclick: () => go('journal')}, 'Дневник'),
+      el('button', {class:'link', type:'button', onclick: () => go('home')}, 'Поле')));
 }
 
 function viewProject(){
@@ -675,14 +753,15 @@ function viewProject(){
     el('div', {class:'path', 'aria-label': done + ' из ' + PROJECT_STEPS.length + ' шагов'}, PROJECT_STEPS.map(st =>
       el('span', {class:'dot' + (pr.steps[st.id] ? '' : ' empty') + (st === next ? ' next' : ''), style:'--sc:' + stageColor(st.mod)}))),
     next ? el('div', {class:'row', style:'margin-top:26px'}, el('button', {class:'go', type:'button', onclick: () => openSession(next.id)}, 'Продолжить'),
-      el('span', {class:'mono faint'}, next.title))
+      el('span', {class:'mono faint'}, 'шаг ' + (done+1) + ': ' + next.title))
       : el('p', {class:'soft', style:'margin-top:26px'}, 'Работа прошла весь путь. Теперь она принадлежит не только вам.'),
     ...MODULES.map(m => el('section', {class:'stage', style:'--sc:' + stageColor(m.id)}, stageHead(m),
       el('ul', {class:'rows'}, PROJECT_STEPS.filter(st => st.mod === m.id).map(st => {
         const d = pr.steps[st.id], open = d || st === next;
         return el('li', {class: d ? 'is-done' : null}, el('button', {type:'button', disabled: !open, onclick: () => openSession(st.id)},
-          el('span', {class:'dot' + (d ? '' : ' empty')}), el('span', {class:'t'}, st.title),
-          el('span', {class:'m'}, d ? 'сделано' : st === next ? 'дальше' : st.min + ' мин')));
+          el('span', {class:'num'}, String(PROJECT_STEPS.indexOf(st)+1)),
+          el('span', {class:'tw'}, el('span', {class:'t'}, st.title), el('span', {class:'d'}, st.text)),
+          el('span', {class:'m' + (st === next ? ' next' : '')}, d ? 'сделано' : st === next ? 'дальше' : st.min + ' мин')));
       })))),
     el('p', {style:'margin-top:56px'}, armBtn(next ? 'Начать заново' : 'Начать новый проект', 'Нажмите ещё раз, чтобы сбросить', () => { state.project = null; save(); viewProject(); })));
 }
