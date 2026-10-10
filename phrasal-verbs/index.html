@@ -198,6 +198,10 @@ h1.big .o{color:transparent;-webkit-text-stroke:1.6px var(--ink)}
 .exru{color:var(--faint);font-size:.9rem;line-height:1.45}
 .speak{display:inline-flex;align-items:center;gap:6px;border:0;background:none;color:var(--accent);font:500 .82rem var(--text);padding:4px 0;cursor:pointer;justify-self:start}
 .speak svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.speaks{display:flex;flex-wrap:wrap;gap:4px 18px}
+.voice{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:10px 14px;border-radius:14px;background:var(--sunk);border:1px solid var(--line)}
+.voice-l{display:flex;align-items:center;gap:10px;min-width:0;flex:1 1 260px}
+.voice select{flex:1;min-width:0;max-width:340px;background:var(--solid);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:7px 10px;font:500 .88rem var(--text)}
 .empty{grid-column:1/-1;padding:40px 16px;text-align:center;color:var(--faint)}
 
 /* particles */
@@ -444,6 +448,11 @@ h1.big .o{color:transparent;-webkit-text-stroke:1.6px var(--ink)}
      </div>
      <span class="label" id="refCount"></span>
     </div>
+    <div class="voice" id="voiceBox" hidden>
+     <label class="voice-l" for="voiceSel"><span class="label">Голос</span><select id="voiceSel"></select></label>
+     <div class="seg" id="voiceRate" role="group" aria-label="Скорость речи"><button data-r="0.75" aria-pressed="false">медленно</button><button data-r="0.95" aria-pressed="true">обычно</button></div>
+     <button class="speak" type="button" data-say="Let's get down to business."><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>Проверить</button>
+    </div>
    </div>
    <div class="ref-list" id="refList"></div>
   </section>
@@ -635,8 +644,29 @@ const SYM={up:'Up',down:'Dn',out:'Ou',off:'Of',on:'On',in:'In',over:'Ov',away:'A
 const HUES=Object.values(PARTS).map(p=>p.h);
 const SPEAK='speechSynthesis' in window;
 const speakIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>';
-function speak(t){try{const u=new SpeechSynthesisUtterance(t);u.lang='en-US';u.rate=.92;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
-const speakBtn=x=>SPEAK?`<button class="speak" type="button" data-say="${plain(x.ex).replace(/"/g,'&quot;')}">${speakIcon}Послушать пример</button>`:'';
+/* озвучка: выбираем самый естественный английский голос из доступных в браузере */
+const VOICE={list:[],sel:null,rate:.95};
+try{const v=JSON.parse(localStorage.getItem('phrasal-orbit.voice')||'{}');if(v.rate)VOICE.rate=v.rate;VOICE.want=v.name}catch(e){}
+const BAD_VOICE=/albert|bad news|bahh|bells|boing|bubbles|cellos|jester|organ|trinoids|whisper|zarvox|superstar|wobble|good news|deranged|hysterical|pipe|junior|ralph|fred|kathy|espeak|compact/i;
+function voiceScore(v){let s=0;const n=v.name;
+ if(/natural|neural/i.test(n))s+=60;if(/online/i.test(n))s+=15;if(/premium/i.test(n))s+=50;if(/enhanced/i.test(n))s+=40;
+ if(/^Google (US|UK) English/i.test(n))s+=35;
+ if(/\b(Aria|Jenny|Guy|Ava|Andrew|Emma|Brian|Samantha|Allison|Susan|Zoe|Evan|Nathan|Serena|Daniel|Karen|Moira|Libby|Sonia|Ryan)\b/.test(n))s+=20;
+ if(/^en[-_](US|GB)/i.test(v.lang))s+=8;if(v.localService===false)s+=4;if(BAD_VOICE.test(n))s-=200;return s}
+function loadVoices(){if(!SPEAK)return;let vs=[];try{vs=speechSynthesis.getVoices()}catch(e){}
+ VOICE.list=vs.filter(v=>/^en/i.test(v.lang)&&!BAD_VOICE.test(v.name)).sort((a,b)=>voiceScore(b)-voiceScore(a));
+ VOICE.sel=VOICE.list.find(v=>v.name===VOICE.want)||VOICE.list[0]||null;renderVoiceUI()}
+function saveVoice(){try{localStorage.setItem('phrasal-orbit.voice',JSON.stringify({name:VOICE.sel&&VOICE.sel.name,rate:VOICE.rate}))}catch(e){}}
+function renderVoiceUI(){const box=document.getElementById('voiceBox');if(!box)return;
+ box.hidden=!VOICE.list.length;const sel=document.getElementById('voiceSel');
+ sel.innerHTML=VOICE.list.slice(0,14).map(v=>`<option value="${v.name.replace(/"/g,'&quot;')}">${v.name.replace(/^(Microsoft|Google)\s+/,'').replace(/\s*\(.*?\)\s*/g,' ').replace(/ Online| - English.*$/i,'').trim()} · ${v.lang.replace('_','-')}</option>`).join('');
+ if(VOICE.sel)sel.value=VOICE.sel.name;
+ document.querySelectorAll('#voiceRate button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.r===VOICE.rate)))}
+function speak(t){if(!SPEAK)return;try{speechSynthesis.cancel();
+ const parts=t.split('||');parts.forEach((txt,k)=>{const u=new SpeechSynthesisUtterance(txt);u.lang=VOICE.sel?VOICE.sel.lang:'en-US';if(VOICE.sel)u.voice=VOICE.sel;
+  u.rate=VOICE.rate*(k===0&&parts.length>1?.9:1);u.pitch=1;speechSynthesis.speak(u)})}catch(e){}}
+const speakBtn=x=>SPEAK?`<span class="speaks"><button class="speak" type="button" data-say="${x.v} ${x.p}.||${plain(x.ex).replace(/"/g,'&quot;')}">${speakIcon}Глагол и пример</button><button class="speak" type="button" data-say="${plain(x.ex).replace(/"/g,'&quot;')}">${speakIcon}Только пример</button></span>`:'';
+if(SPEAK){loadVoices();try{speechSynthesis.addEventListener('voiceschanged',loadVoices)}catch(e){speechSynthesis.onvoiceschanged=loadVoices}}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-say]');if(b){e.stopPropagation();speak(b.dataset.say)}});
 
 /* ---------- прогресс ---------- */
@@ -808,6 +838,8 @@ const RF={q:'',part:'all',st:'all'};
   d._s=(x.v+' '+x.p+' '+x.ru+' '+plain(x.ex)).toLowerCase();list.appendChild(d);
  }
  list.appendChild(el('<p class="empty" id="refEmpty" hidden>Ничего не нашлось. Попробуйте другое слово или сбросьте фильтры.</p>'));
+ $('#voiceSel').addEventListener('change',e=>{VOICE.sel=VOICE.list.find(v=>v.name===e.target.value)||VOICE.sel;saveVoice();speak("Let's get down to business.")});
+ $$('#voiceRate button').forEach(b=>b.onclick=()=>{VOICE.rate=+b.dataset.r;saveVoice();renderVoiceUI();speak("Let's get down to business.")});renderVoiceUI();
  $('#q').addEventListener('input',e=>{RF.q=e.target.value.trim().toLowerCase();filterRef()});
  $$('#refStatus button').forEach(b=>b.onclick=()=>{RF.st=b.dataset.s;$$('#refStatus button').forEach(c=>c.setAttribute('aria-pressed',String(c===b)));filterRef()});
 })();
