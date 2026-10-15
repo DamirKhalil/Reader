@@ -7,3 +7,7 @@ assets/base.png
 debug/*.png
 debug/*.log
 __pycache__/
+debug/*.gif
+assets/base_holes_filled.png
+assets/depth.png
+assets/normal.png
