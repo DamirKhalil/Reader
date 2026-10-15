@@ -92,6 +92,7 @@ export const shelfFragment = /* glsl */ `
   uniform float uVignette;
   uniform float uGrain;
   uniform float uWaveBrighten;
+  uniform float uWaveShadow;
   uniform vec2 uResolution;
   uniform vec4 uCellTint[35];
   ${COMMON}
@@ -125,6 +126,17 @@ export const shelfFragment = /* glsl */ `
     float spec, atten;
     vec3 light = relight(vWorld, N, gloss, spec, atten);
     light *= 1.0 + lift * uWaveBrighten;               // a pushed-out spine catches more light
+    if (uWaveShadow > 0.0 && uFrame >= uWave.x) {      // and shades the edges of its neighbours
+      float pxs = 1.0 / uMapSize.x;
+      float occ = 0.0;
+      for (int k = 1; k <= 3; k++) {
+        float o = float(k * k) * 2.5 * pxs;
+        float fall = 1.0 - float(k - 1) * 0.3;
+        occ = max(occ, (waveLift(decodeId(mapUv - vec2(o, 0.0))) - lift) * fall);
+        occ = max(occ, (waveLift(decodeId(mapUv + vec2(o, 0.0))) - lift) * fall);
+      }
+      light *= 1.0 - uWaveShadow * clamp(occ, 0.0, 1.0);
+    }
     vec3 col = albedo * light * uExposure + spec * uWarm;
 
     // cheap bloom on highlights: specular of a ring of neighbours

@@ -13,3 +13,4 @@ assets/depth.png
 assets/normal.png
 video/public/shelf/
 out/*.png
+shelf/out/_*

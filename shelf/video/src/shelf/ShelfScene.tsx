@@ -72,6 +72,7 @@ const ShelfPlane: React.FC<{ a: ShelfAssets } & Frameish> = ({ a, ...f }) => {
         uWave: { value: new THREE.Vector4(WAVE.start, WAVE.sweep, WAVE.rowDelay, WAVE.pulse) },
         uWaveAmp: { value: WAVE.amplitude },
         uWaveBrighten: { value: WAVE.brighten },
+        uWaveShadow: { value: WAVE.shadow },
         uCellTint: { value: Array.from({ length: 35 }, () => new THREE.Vector4(1, 1, 1, 0)) },
       },
     });
@@ -81,6 +82,17 @@ const ShelfPlane: React.FC<{ a: ShelfAssets } & Frameish> = ({ a, ...f }) => {
   return <mesh geometry={geometry} material={material} />;
 };
 
+// same formula as waveLift() in the shader, for meshes that must move with their spine
+export function waveLiftJS(a: ShelfAssets, spineId: number | undefined, frame: number) {
+  if (!spineId) return 0;
+  const s = a.scene.spines.find((x) => x.id === spineId);
+  if (!s || s.type !== 1) return 0;
+  const delay = WAVE.start + s.row * WAVE.rowDelay + s.cx * WAVE.sweep;
+  const t = (frame - delay) / WAVE.pulse;
+  if (t <= 0 || t >= 1) return 0;
+  return Math.sin(Math.PI * t) ** 2;
+}
+
 const Sprite: React.FC<{ a: ShelfAssets; name: string; z: number; gloss: number } & Frameish> = ({
   a,
   name,
@@ -88,6 +100,7 @@ const Sprite: React.FC<{ a: ShelfAssets; name: string; z: number; gloss: number 
   gloss,
   ...f
 }) => {
+  const lift = waveLiftJS(a, a.sprites[name].info.spine_id, f.frame);
   const s = a.sprites[name];
   const [x0, y0, x1, y1] = s.info.bbox;
   const [wx, wy] = toWorld((x0 + x1) / 2, (y0 + y1) / 2);
@@ -111,8 +124,13 @@ const Sprite: React.FC<{ a: ShelfAssets; name: string; z: number; gloss: number 
     });
   }, [s, gloss]);
   const geometry = useMemo(() => new THREE.PlaneGeometry(w, h, 32, 32), [w, h]);
-  useLayoutEffect(() => applyCommon(material.uniforms, f), [material, f]);
-  return <mesh geometry={geometry} material={material} position={[wx, wy, z]} renderOrder={2} />;
+  useLayoutEffect(() => {
+    applyCommon(material.uniforms, f);
+    material.uniforms.uBrighten.value = lift * WAVE.brighten;
+  }, [material, f, lift]);
+  return (
+    <mesh geometry={geometry} material={material} position={[wx, wy, z + lift * WAVE.amplitude]} renderOrder={2} />
+  );
 };
 
 const Dust: React.FC<Frameish> = (f) => {

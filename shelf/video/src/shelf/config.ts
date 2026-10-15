@@ -70,11 +70,14 @@ export const LIGHT = {
 
 export const WAVE = {
   start: TIMELINE.e3Wave[0] + 6,
-  amplitude: 0.012, // world units (~1-1.5% of a cell's depth range after scaling)
-  pulse: 26, // frames for one spine to go out and back
-  sweep: 70, // frames for the wave to cross the shelf left -> right
-  rowDelay: 22, // extra delay per row (top row first)
-  brighten: 0.35,
+  // world units. The literal "1-1.5% of the cell depth" (~4 mm) is invisible from a frontal camera,
+  // so this is a visible but still clean value (~27% of the depth range of a cell in the scene)
+  amplitude: 0.015,
+  pulse: 24, // frames for one spine to go out and back
+  sweep: 60, // frames for the wave to cross the shelf left -> right
+  rowDelay: 18, // extra delay per row (top row first); last spine ends at ~start+156
+  brighten: 0.6,
+  shadow: 0.65, // a pushed-out spine darkens the edge of its neighbours
 };
 
 export const DUST = {
