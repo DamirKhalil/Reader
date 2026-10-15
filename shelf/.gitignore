@@ -11,3 +11,5 @@ debug/*.gif
 assets/base_holes_filled.png
 assets/depth.png
 assets/normal.png
+video/public/shelf/
+out/*.png

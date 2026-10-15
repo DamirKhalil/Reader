@@ -7,3 +7,4 @@ cd "$(dirname "$0")/.."
 [ -f assets/base.png ] || python prep/upscale.py
 python prep/analyze.py
 python prep/depth.py "$@"
+python prep/export_web.py
