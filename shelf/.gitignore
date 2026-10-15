@@ -6,3 +6,4 @@ out/*.mp4
 assets/base.png
 debug/*.png
 debug/*.log
+__pycache__/
