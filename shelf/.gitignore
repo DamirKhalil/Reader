@@ -3,3 +3,6 @@ models/
 video/node_modules/
 video/out/
 out/*.mp4
+assets/base.png
+debug/*.png
+debug/*.log
