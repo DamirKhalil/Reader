@@ -1,0 +1,5 @@
+.venv/
+models/
+video/node_modules/
+video/out/
+out/*.mp4

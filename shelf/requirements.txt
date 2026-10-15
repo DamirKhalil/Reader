@@ -1,0 +1,8 @@
+numpy
+opencv-contrib-python-headless
+pillow
+scipy
+torch
+transformers
+accelerate
+imageio
