@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#0f0f10"/>
+  <rect x="253" y="124" width="6" height="48" rx="3" fill="#6b6b68"/>
+  <rect x="253" y="340" width="6" height="48" rx="3" fill="#6b6b68"/>
+  <g font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="124" fill="#ececea">
+    <text x="221" y="299" text-anchor="end">Т</text>
+    <text x="256" y="299" text-anchor="middle" fill="#ff5a4e">е</text>
+    <text x="291" y="299">мп</text>
+  </g>
+</svg>
