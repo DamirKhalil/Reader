@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f0f10">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Темп">
+<meta name="description" content="RSVP-читалка: текст по одному слову с опорной буквой в фиксированной точке.">
+<title>Темп — RSVP-чтение</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Библиотека -->
+<main id="library" class="screen library">
+  <header class="lib-head">
+    <h1 class="brand">Т<b>е</b>мп</h1>
+    <button class="icon-btn" id="libSettings" aria-label="Настройки">
+      <svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+    </button>
+  </header>
+
+  <div class="add">
+    <button class="add-btn" id="pasteBtn" type="button">
+      <svg viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3"/></svg>
+      <span>Вставить текст</span>
+    </button>
+    <label class="add-btn">
+      <svg viewBox="0 0 24 24"><path d="M5 20h14M12 4v12M7 11l5 5 5-5"/></svg>
+      <span>Открыть файл</span>
+      <input type="file" id="fileInput" accept=".txt,.fb2,.epub,.md,.markdown,.html,.htm,text/plain,application/epub+zip" hidden>
+    </label>
+  </div>
+  <p class="formats">TXT · FB2 · EPUB · HTML · MD</p>
+
+  <h2 class="list-title">Библиотека</h2>
+  <ul id="books" class="books"></ul>
+  <div id="empty" class="empty" hidden>
+    <p>Пока пусто. Вставьте текст, откройте книгу или попробуйте короткое вступление.</p>
+    <button class="primary" id="demoBtn" type="button">Попробовать</button>
+  </div>
+</main>
+
+<!-- Читалка -->
+<section id="reader" class="screen reader" hidden>
+  <header class="r-head">
+    <button class="icon-btn" id="backBtn" aria-label="В библиотеку">
+      <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <div class="r-title" id="rTitle"></div>
+    <button class="icon-btn" id="rSettings" aria-label="Настройки">
+      <svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+    </button>
+  </header>
+
+  <div class="stage" id="stage">
+    <div class="frame">
+      <div class="guide top"></div>
+      <div class="word" id="word" aria-live="off"><span class="l"></span><span class="c"></span><span class="r"></span></div>
+      <div class="guide bottom"></div>
+    </div>
+    <p class="hint" id="hint">Коснитесь, чтобы начать</p>
+  </div>
+
+  <div class="context" id="context" hidden></div>
+
+  <footer class="r-foot">
+    <div class="meta-row"><span id="pct">0%</span><span id="left"></span></div>
+    <input type="range" id="scrub" min="0" max="0" value="0" step="1" aria-label="Позиция в тексте">
+    <div class="controls">
+      <button class="speed-btn" id="slower" type="button" aria-label="Медленнее">−</button>
+      <button class="icon-btn big" id="prevSent" type="button" aria-label="Предыдущее предложение">
+        <svg viewBox="0 0 24 24"><path d="M6 5v14M18 6l-8 6 8 6z"/></svg>
+      </button>
+      <button class="play" id="playBtn" type="button" aria-label="Старт">
+        <svg class="i-play" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg>
+        <svg class="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg>
+      </button>
+      <button class="icon-btn big" id="nextSent" type="button" aria-label="Следующее предложение">
+        <svg viewBox="0 0 24 24"><path d="M18 5v14M6 6l8 6-8 6z"/></svg>
+      </button>
+      <button class="speed-btn" id="faster" type="button" aria-label="Быстрее">+</button>
+    </div>
+    <div class="wpm-row"><b id="wpmVal">300</b> слов в минуту</div>
+  </footer>
+</section>
+
+<!-- Вставка текста -->
+<dialog id="pasteDlg" class="sheet">
+  <form method="dialog" class="sheet-body">
+    <h3>Новый текст</h3>
+    <input id="pasteTitle" type="text" placeholder="Название (необязательно)" autocomplete="off">
+    <textarea id="pasteText" placeholder="Вставьте текст сюда"></textarea>
+    <div class="sheet-actions">
+      <button type="button" id="clipBtn" class="ghost">Из буфера</button>
+      <span class="grow"></span>
+      <button value="cancel" class="ghost" formnovalidate>Отмена</button>
+      <button value="ok" class="primary" id="pasteGo">Читать</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Настройки -->
+<dialog id="setDlg" class="sheet">
+  <form method="dialog" class="sheet-body settings">
+    <h3>Настройки</h3>
+
+    <label class="row">
+      <span class="lbl">Скорость <output id="oWpm">300</output></span>
+      <input type="range" id="sWpm" min="100" max="1000" step="25">
+    </label>
+
+    <div class="row">
+      <span class="lbl">Слов за раз</span>
+      <div class="seg" id="sChunk">
+        <button type="button" data-v="1">1</button><button type="button" data-v="2">2</button><button type="button" data-v="3">3</button>
+      </div>
+    </div>
+
+    <label class="row">
+      <span class="lbl">Размер <output id="oSize">44</output></span>
+      <input type="range" id="sSize" min="26" max="80" step="2">
+    </label>
+
+    <div class="row">
+      <span class="lbl">Шрифт</span>
+      <div class="seg" id="sFont">
+        <button type="button" data-v="sans">Гротеск</button><button type="button" data-v="serif">Антиква</button><button type="button" data-v="mono">Моно</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <span class="lbl">Тема</span>
+      <div class="seg" id="sTheme">
+        <button type="button" data-v="dark">Тёмная</button><button type="button" data-v="light">Светлая</button><button type="button" data-v="sepia">Сепия</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <span class="lbl">Цвет опорной буквы</span>
+      <div class="swatches" id="sAccent">
+        <button type="button" data-v="#ff5a4e" style="--c:#ff5a4e" aria-label="Красный"></button>
+        <button type="button" data-v="#f2a33a" style="--c:#f2a33a" aria-label="Янтарный"></button>
+        <button type="button" data-v="#3fb67f" style="--c:#3fb67f" aria-label="Зелёный"></button>
+        <button type="button" data-v="#4f8ff7" style="--c:#4f8ff7" aria-label="Синий"></button>
+        <button type="button" data-v="ink" style="--c:var(--ink)" aria-label="Цвет текста"></button>
+      </div>
+    </div>
+
+    <label class="toggle"><span>Паузы на знаках препинания<small>Дольше держит слово перед запятой, точкой и в конце абзаца</small></span><input type="checkbox" id="sPauses"></label>
+    <label class="toggle"><span>Плавный разгон<small>Первые слова после паузы идут медленнее</small></span><input type="checkbox" id="sRamp"></label>
+    <label class="toggle"><span>Направляющие<small>Тонкие метки над и под опорной буквой</small></span><input type="checkbox" id="sGuides"></label>
+
+    <div class="sheet-actions"><span class="grow"></span><button value="ok" class="primary">Готово</button></div>
+  </form>
+</dialog>
+
+<div id="toast" class="toast" role="status" hidden></div>
+
+<script src="app.js"></script>
+</body>
+</html>
